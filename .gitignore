@@ -31,8 +31,10 @@ Thumbs.db
 # Git
 .git/
 
-# Environment (不忽略.env，示例文件单独上传)
+# Environment (密钥文件)
+.env
 .env.local
+.env.production
 *.env
 
 # Docker
@@ -47,3 +49,8 @@ npm-debug.log
 *.tmp
 .cache/
 .pytest_cache/
+temp/
+
+# 测试文件
+test_*.py
+test_*.ps1
