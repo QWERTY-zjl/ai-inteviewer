@@ -1515,33 +1515,29 @@ def generate_interview_evaluation_with_llm(interview_data):
     # 调用大模型API
     import requests
     
-    # 使用阿里云 DashScope 模型
-    url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+    # 使用阿里云 DashScope 兼容模式
+    url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     
     data = {
-        "model": "qwen-plus",
-        "input": {
-            "prompt": prompt
-        },
-        "parameters": {
-            "max_tokens": 2000,
-            "temperature": 0.7,
-            "top_p": 0.9
-        }
+        "model": "qwen-turbo",
+        "messages": [
+            {"role": "system", "content": "你是一位专业的面试官，负责评价面试表现。请返回JSON格式。"},
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": 2000,
+        "temperature": 0.7
     }
     
     print("[Evaluation] 调用大模型API...")
     print(f"[Evaluation] 请求URL: {url}")
-    print(f"[Evaluation] 请求参数: {data}")
     
     response = requests.post(url, headers=headers, json=data, timeout=60)
     
     print(f"[Evaluation] API 响应状态: {response.status_code}")
-    print(f"[Evaluation] 响应内容: {response.text}")
     
     if response.status_code != 200:
         error_msg = response.text or f"HTTP {response.status_code}"
@@ -1551,15 +1547,13 @@ def generate_interview_evaluation_with_llm(interview_data):
     # 解析响应
     result = response.json()
     print("[Evaluation] API 响应成功")
-    print(f"[Evaluation] 响应结果: {result}")
     
-    if "output" not in result or "text" not in result["output"]:
+    if "choices" not in result or not result["choices"]:
         print("[Evaluation] 响应格式错误")
         raise Exception("响应格式错误")
     
-    generated_text = result["output"]["text"]
+    generated_text = result["choices"][0]["message"]["content"]
     print(f"[Evaluation] 生成文本长度: {len(generated_text)}")
-    print(f"[Evaluation] 生成文本: {generated_text}")
     
     # 解析生成的评价
     evaluation = parse_generated_evaluation(generated_text)

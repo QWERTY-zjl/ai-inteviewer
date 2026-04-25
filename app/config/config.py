@@ -13,11 +13,11 @@ load_dotenv()
 # 阿里云 DashScope API 密钥（同时支持 OPENAI_API_KEY 环境变量）
 DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY") or os.getenv("OPENAI_API_KEY")
 
-# OpenAI API 密钥（备用）
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# OpenAI API 密钥（使用阿里云百炼密钥）
+OPENAI_API_KEY = os.getenv("DASHSCOPE_API_KEY") or os.getenv("OPENAI_API_KEY")
 
-# OpenAI API 地址（默认使用国内代理）
-OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.chatanywhere.tech/v1")
+# OpenAI API 地址（默认使用阿里云百炼兼容模式）
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
 
 # SQLite 数据库文件名
 DATABASE_NAME = "interview_system.db"

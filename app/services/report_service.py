@@ -104,12 +104,11 @@ JSON格式示例:
     
     url = f"{OPENAI_BASE_URL}/chat/completions"
     data = {
-        "model": "qwen-plus",
+        "model": "qwen-turbo",
         "messages": [
             {"role": "system", "content": "你是一位专业的面试评估专家，负责评估技术面试表现。请返回JSON格式。"},
             {"role": "user", "content": prompt}
-        ],
-        "response_format": {"type": "json_object"}
+        ]
     }
     
     # 使用requests库发送请求，比urllib更简洁高效
