@@ -560,138 +560,47 @@ INTERVIEWER_VOICES = {
 
 def synthesize_speech(text, voice_type="professional_male"):
     """
-    使用阿里云 DashScope cosyvoice-v3-flash 模型进行语音合成
+    使用阿里云 qwen-tts 模型进行语音合成
     """
     try:
-        import json
-        print(f"[TTS] 开始合成，文本: {text[:50]}..., 音色: {voice_type}")
-        
         # 检查text参数
         if not text or not text.strip():
-            print("[TTS] 错误: 文本为空")
-            return None, "文本不能为空"
+            return None, "文本为空"
         
         # 检查API Key
         api_key = os.getenv("DASHSCOPE_API_KEY") or os.getenv("OPENAI_API_KEY")
         if not api_key:
-            print("[TTS] 错误: API Key 为空!")
-            return None, "未配置 DASHSCOPE_API_KEY"
+            return None, "未配置 API Key"
 
-        print(f"[TTS] API Key 已配置，长度: {len(api_key)}")
+        # 音色映射
+        voice = "zh-CN-YunxiNeural"  # 默认专业男声
         
-        # 处理前端传递的音色类型
-        if voice_type.startswith('zh-CN-'):
-            # 使用默认音色
-            voice = "longanzhi_v3"
-            print(f"[TTS] 使用默认音色: {voice}")
+        # 调用 qwen-tts
+        import requests
+        url = "https://dashscope.aliyuncs.com/api/v1/services/audio/tts"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "qwen-tts",
+            "input": {"text": text},
+            "parameters": {"voice": voice, "format": "mp3", "sample_rate": 24000}
+        }
+        
+        response = requests.post(url, headers=headers, json=data, timeout=60)
+        
+        if response.status_code == 200:
+            result = response.json()
+            audio_base64 = result.get("output", {}).get("audio", "")
+            if audio_base64:
+                import base64
+                return base64.b64decode(audio_base64), None
+            return None, "无音频数据"
         else:
-            # 使用 INTERVIEWER_VOICES 中定义的音色
-            voice_config = INTERVIEWER_VOICES.get(voice_type, INTERVIEWER_VOICES["professional_male"])
-            voice = voice_config["voice"]
-            print(f"[TTS] 使用音色: {voice} - {voice_config['name']}")
-        
-        # cosyvoice-v3-flash 使用 HTTP API 调用方式
-        try:
-            print("[TTS] 尝试使用HTTP API调用cosyvoice-v3-flash...")
-            import requests
-            
-            # cosyvoice-v3-flash HTTP API 调用
-            # 参考文档: https://help.aliyun.com/zh/model-studio/non-realtime-cosyvoice-api
-            url = "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer"
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            }
-            
-            # cosyvoice-v3-flash 的请求参数格式
-            # voice 和 format 必须放在 input 对象中
-            data = {
-                "model": "cosyvoice-v3-flash",
-                "input": {
-                    "text": text,
-                    "voice": voice,
-                    "format": "mp3",
-                    "sample_rate": 24000
-                }
-            }
-            
-            print(f"[TTS] 请求URL: {url}")
-            print(f"[TTS] 请求参数: {json.dumps(data, ensure_ascii=False)}")
-            
-            # 发送请求
-            response = requests.post(url, headers=headers, json=data, timeout=120)
-            
-            print(f"[TTS] 响应状态码: {response.status_code}")
-            print(f"[TTS] 响应头: {dict(response.headers)}")
-            
-            # 检查响应类型
-            content_type = response.headers.get('Content-Type', '')
-            print(f"[TTS] Content-Type: {content_type}")
-            
-            if response.status_code == 200:
-                # 检查是否是音频数据（流式返回）
-                if 'audio' in content_type or 'octet-stream' in content_type:
-                    audio_data = response.content
-                    print(f"[TTS] 成功获取音频数据，大小: {len(audio_data)} 字节")
-                    return audio_data, None
-                else:
-                    # 可能是JSON响应
-                    try:
-                        result = response.json()
-                        print(f"[TTS] JSON响应: {json.dumps(result, ensure_ascii=False)}")
-                        
-                        # 检查是否有音频URL
-                        if 'output' in result and 'audio' in result['output']:
-                            audio_info = result['output']['audio']
-                            if isinstance(audio_info, dict) and 'url' in audio_info:
-                                audio_url = audio_info['url']
-                                print(f"[TTS] 获取到音频URL: {audio_url[:80]}...")
-                                # 下载音频
-                                audio_response = requests.get(audio_url, timeout=60)
-                                if audio_response.status_code == 200:
-                                    audio_data = audio_response.content
-                                    print(f"[TTS] 成功下载音频数据，大小: {len(audio_data)} 字节")
-                                    return audio_data, None
-                                else:
-                                    return None, f"下载音频失败: HTTP {audio_response.status_code}"
-                            elif isinstance(audio_info, str):
-                                # 可能是base64编码的音频
-                                import base64
-                                audio_data = base64.b64decode(audio_info)
-                                print(f"[TTS] 成功解码base64音频数据，大小: {len(audio_data)} 字节")
-                                return audio_data, None
-                    except Exception as json_err:
-                        print(f"[TTS] 解析JSON响应失败: {json_err}")
-                        # 如果解析失败，可能是直接返回的音频数据
-                        audio_data = response.content
-                        if len(audio_data) > 100:  # 假设音频数据至少100字节
-                            print(f"[TTS] 将响应内容作为音频数据，大小: {len(audio_data)} 字节")
-                            return audio_data, None
-                        
-                return None, f"无法解析响应数据"
-            else:
-                error_text = response.text
-                print(f"[TTS] API调用失败: HTTP {response.status_code}, 响应: {error_text}")
-                return None, f"语音合成失败: HTTP {response.status_code} - {error_text[:200]}"
-                
-        except ImportError as e:
-            print(f"[TTS] 缺少requests库: {e}")
-            return None, "缺少requests库，请运行: pip install requests"
-        except Exception as e:
-            print(f"[TTS] HTTP API调用异常: {e}")
-            import traceback
-            traceback.print_exc()
-            return None, f"语音合成失败: {str(e)}"
-            
+            return None, f"API错误: {response.status_code} - {response.text[:100]}"
     except Exception as e:
-        print(f"[TTS] 异常: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return None, str(e)
-
-
-
-@app.route('/api/tts/voices', methods=['GET'])
 def get_tts_voices():
     voices = []
     for key, config in INTERVIEWER_VOICES.items():
@@ -711,13 +620,20 @@ def synthesize_tts():
     if not text:
         return jsonify({"error": "文本不能为空"}), 400
     
-    # 直接返回成功响应，告诉前端使用浏览器内置语音合成
-    # 这样可以避免API密钥无效导致的TTS功能失败
-    return jsonify({
-        "status": "success",
-        "use_browser_tts": True,
-        "message": "使用浏览器内置语音合成"
-    })
+    # 调用服务端语音合成
+    audio_data, error = synthesize_speech(text, voice_type)
+    
+    if error or not audio_data:
+        # API调用失败，告诉前端使用浏览器内置TTS
+        return jsonify({
+            "status": "success",
+            "use_browser_tts": True,
+            "message": "使用浏览器内置语音合成"
+        })
+    
+    # 返回音频数据
+    from flask import Response
+    return Response(audio_data, mimetype='audio/mpeg')
 
 @app.route('/api/interview/<token>/set_voice', methods=['POST'])
 def set_interview_voice(token):

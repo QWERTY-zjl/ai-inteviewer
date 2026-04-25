@@ -80,24 +80,22 @@ def synthesize_speech(text, voice_type="professional_male"):
         # 映射音色类型
         voice = VOICE_MAP.get(voice_type, "zh-CN-YunxiNeural")
         
-        # 调用阿里云 TTS API
+        # 调用阿里云 TTS API（兼容模式 - OpenAI兼容格式）
         response = requests.post(
-            "https://dashscope.aliyuncs.com/api/v1/services/audio/tts",
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/audio/speech",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
-                "model": "Qwen-TTS",
+                "model": "qwen-tts",
                 "input": {"text": text},
-                "parameters": {"voice": voice, "format": "wav", "sample_rate": 16000}
+                "voice": voice
             },
             timeout=60
         )
         
         if response.status_code == 200:
-            result = response.json()
-            # 解码音频数据
-            audio_data = base64.b64decode(result["output"]["audio"])
-            return audio_data, None
-        return None, f"语音合成失败: {response.status_code}"
+            # 直接返回二进制音频数据
+            return response.content, None
+        return None, f"语音合成失败: {response.status_code} - {response.text[:200]}"
     except Exception as e:
         logger.error(f"[TTS] 错误: {e}")
         return None, str(e)
