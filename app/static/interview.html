@@ -1704,6 +1704,17 @@
                 onMounted(async () => {
                     console.log('页面加载开始...');
                     console.log('token.value:', token.value);
+                    
+                    // 绘制雷达图
+                    const tryDrawRadar = () => {
+                        const canvas = document.getElementById('radarChart');
+                        if (canvas && window.drawRadarChart) {
+                            window.drawRadarChart();
+                        } else {
+                            setTimeout(tryDrawRadar, 100);
+                        }
+                    };
+                    tryDrawRadar();
                     try {
                         // 检查token是否有效
                         let tokenValid = false;
@@ -2880,6 +2891,9 @@
                     }
                 };
                 
+                // 立即尝试绘制雷达图
+                window.drawRadarChart();
+                
                 const generateInterviewEvaluation = async () => {
                     interviewEvaluation.value.isLoading = true;
                     try {
@@ -2976,19 +2990,10 @@
                             isLoading: false
                         };
                         // 绘制雷达图
-                        // 延迟绘制雷达图，等待DOM渲染完成
-                        const drawAfterRender = () => {
-                            const canvas = document.getElementById('radarChart');
-                            if (canvas) {
-                                drawRadarChart();
-                            } else {
-                                requestAnimationFrame(drawAfterRender);
-                            }
-                        };
-                        requestAnimationFrame(drawAfterRender);
+                        setTimeout(() => { drawRadarChart(); }, 100);
                     }
                 };
-
+                
                 return {
                     isInterviewStarted,
                     isFinished,
@@ -3032,6 +3037,9 @@
                 };
             }
         }).mount('#app');
+        
+        // 页面加载完成后绘制雷达图
+        setTimeout(() => { window.drawRadarChart && window.drawRadarChart(); }, 500);
     </script>
 
     <!-- Bootstrap JS and Icons -->
