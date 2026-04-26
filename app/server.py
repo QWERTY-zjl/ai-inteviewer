@@ -1919,8 +1919,8 @@ def upload_resume():
         # 分析简历内容
         logger.info("[Resume] 开始分析简历内容")
         try:
-            # 暂时使用默认分析结果，避免调用大模型API
-            analysis_result = get_default_resume_analysis()
+            # 调用大模型分析简历
+            analysis_result = analyze_resume(resume_content, work_experience, target_position)
             logger.info("[Resume] 简历分析完成")
             logger.debug(f"[Resume] 分析结果: {analysis_result}")
         except Exception as e:
@@ -2134,12 +2134,8 @@ def analyze_resume(resume_content, work_experience, target_position):
         简历分析结果
     """
     logger.info("[Resume] 开始分析简历")
+    logger.info(f"[Resume] 接收到的参数: resume_content长度={len(resume_content) if resume_content else 0}, work_experience={work_experience}, target_position={target_position}")
     try:
-        # 暂时使用默认分析结果，避免调用大模型API
-        # 这是为了避免服务器崩溃的问题
-        logger.info("[Resume] 使用默认分析结果")
-        return get_default_resume_analysis()
-        
         # 检查API密钥
         logger.info("[Resume] 检查API密钥")
         api_key = os.getenv("DASHSCOPE_API_KEY")
@@ -2285,7 +2281,7 @@ def build_resume_analysis_prompt(resume_content, work_experience, target_positio
         resume_text = resume_text[:5000] + "..."
     
     prompt = f"""
-你是一位专业的简历分析专家，负责分析简历内容并生成面试问题。请根据以下简历内容，分析候选人的背景、技能和经验，并生成适合目标岗位的面试问题。
+你是一位资深面试官，需要根据候选人的简历为"{target_position}"岗位生成5个高质量的面试问题。
 
 简历内容：
 {resume_text}
@@ -2293,27 +2289,42 @@ def build_resume_analysis_prompt(resume_content, work_experience, target_positio
 工作经验：{work_experience}
 目标岗位：{target_position}
 
-请从以下几个方面分析简历：
-1. 候选人的专业背景和工作经验
-2. 候选人的技能特长
-3. 候选人的优势和劣势
-4. 适合目标岗位的面试问题（至少5个）
+【重要要求】
+1. 问题必须基于简历中的具体项目、经历、技能
+2. 问题要考察候选人实际解决问题的能力，而非理论知识
+3. 问题要具体、有深度，能区分优秀和普通的候选人
+4. 避免过于宽泛的开放式问题（如"请描述你的优势"）
+5. 每个问题要包含评分标准（5分制）
 
-请以JSON格式输出分析结果，确保JSON格式正确，并且包含以下字段：
-- background: 专业背景和工作经验分析
-- skills: 技能特长分析
-- strengths: 优势
-- weaknesses: 劣势
-- questions: 面试问题列表
-
-示例输出格式：
-{
-  "background": "候选人拥有计算机科学与技术专业背景，具有3年前端开发经验，熟悉HTML、CSS、JavaScript等前端技术。",
-  "skills": "前端技术：HTML5、CSS3、JavaScript、TypeScript、React、Vue；后端技术：Node.js、Express；工具：Git、Webpack、Docker",
-  "strengths": ["基础知识扎实，能够回答大部分专业问题", "专业技能突出，有相关项目经验", "逻辑思维清晰，能有条理地分析问题"],
-  "weaknesses": ["在某些领域的知识深度不够，如算法优化", "表达能力有待提高，回答问题时不够流畅", "对行业最新趋势了解不足，需要加强学习"],
-  "questions": ["请介绍一下你自己，包括你的专业背景和工作经验。", "你为什么选择前端开发这个职业？", "请解释一下什么是闭包，以及它在JavaScript中的应用。", "你如何处理浏览器兼容性问题？", "请描述一下你的项目开发流程。"]
-}
+请以JSON格式输出：
+{{
+  "background": "简历分析（2-3句话）",
+  "skills": "核心技能总结",
+  "strengths": ["优势1", "优势2", "优势3"],
+  "weaknesses": ["劣势1", "劣势2"],
+  "questions": [
+    {{
+      "question": "针对简历中XX项目的具体技术问题？",
+      "score_standard": "0-2分：回答模糊；3分：能说清楚；4-5分：展示深度理解和实战经验"
+    }},
+    {{
+      "question": "关于YY技能的深度追问？",
+      "score_standard": "0-2分：只会理论；3分：有实践但缺乏深度；4-5分：能深入讲解并举例"
+    }},
+    {{
+      "question": "ZZ场景下你会如何处理？",
+      "score_standard": "0-2分：没有思路；3分：有基本方案；4-5分：有完整方案和风险意识"
+    }},
+    {{
+      "question": "你简历中提到AA，请详细说明你具体做了什么？",
+      "score_standard": "0-2分：说不清楚；3分：能说但缺乏细节；4-5分：能详细描述技术细节和成果"
+    }},
+    {{
+      "question": "如果遇到BB问题，你会怎么解决？",
+      "score_standard": "0-2分：无解；3分：有思路但不完整；4-5分：有完整方案和备选思路"
+    }}
+  ]
+}}
 """
     
     return prompt

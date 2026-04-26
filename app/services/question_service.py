@@ -116,33 +116,45 @@ def call_llm_api(prompt, resume_image=None):
         response = requests.post(url, headers=headers, json=data, timeout=60)
         
         if response.status_code != 200:
-            logger.error(f"[Question] API错误: {response.status_code}")
+            logger.error(f"[Question] API错误: {response.status_code}, 响应: {response.text[:500]}")
             return None
         
         response_json = response.json()
         
-        # 验证响应格式
-        if 'choices' not in response_json:
-            logger.error("[Question] 响应缺少choices字段")
+        # 提取响应内容（兼容两种格式）
+        content = ""
+        if 'choices' in response_json:
+            # OpenAI 兼容格式
+            message = response_json['choices'][0]['message']
+            content = message.get('content', '')
+        elif 'output' in response_json and 'choices' in response_json['output']:
+            # 阿里云百炼格式
+            content = response_json['output']['choices'][0]['message']['content']
+        
+        if not content:
+            logger.error("[Question] 响应内容为空")
             return None
         
-        message = response_json['choices'][0]['message']
-        if 'content' not in message:
-            logger.error("[Question] 响应缺少content字段")
-            return None
+        # 处理 < Lang_200think> 思考标签
+        if '< Lang_200think>' in content:
+            content = content.split('< Lang_200think>')[-1].strip()
+            logger.info("[Question] 已移除思考标签")
         
         # 解析返回的 JSON（处理markdown代码块格式）
-        content = message['content'].strip()
+        content = content.strip()
         # 去掉可能的 markdown 代码块标记
-        if content.startswith('```json'):
-            content = content[7:]
-        if content.startswith('```'):
-            content = content[3:]
-        if content.endswith('```'):
-            content = content[:-3]
-        return json.loads(content.strip())
+        if '```json' in content:
+            content = content.split('```json')[1].split('```')[0].strip()
+        elif '```' in content:
+            parts = content.split('```')
+            if len(parts) >= 2:
+                content = parts[1].strip()
+        
+        return json.loads(content)
     except Exception as e:
         logger.error(f"[Question] API调用失败: {e}")
+        if 'response_json' in dir():
+            logger.error(f"[Question] 响应内容: {response_json}")
         return None
 
 
