@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI智能面试系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/chart.umd.js"></script>
+</head>
+<body>
+    <div class="bg"></div>
+    <div class="grid"></div>
+    <nav class="navbar">
+        <div class="brand">AI智能面试</div>
+        <div class="flex gap-2 items-center">
+            <span id="userInfo" class="text-muted text-sm hidden"></span>
+            <button id="btnLogout" class="btn btn-secondary hidden" onclick="logout()">退出</button>
+        </div>
+    </nav>
+    <main class="container mt-4">
+        <!-- 登录界面 -->
+        <div id="loginSection" class="card fade-in" style="max-width:400px;margin:2rem auto">
+            <h2 class="text-2xl text-gradient mb-4 text-center">欢迎使用AI面试系统</h2>
+            <div class="flex flex-col gap-3">
+                <input type="text" id="username" class="input" placeholder="用户名">
+                <input type="password" id="password" class="input" placeholder="密码">
+                <button class="btn btn-primary w-full" onclick="login()">登录</button>
+                <p class="text-center text-muted text-sm mt-2">没有账号？<a href="#" onclick="showRegister();return false" style="color:var(--accent)">立即注册</a></p>
+            </div>
+        </div>
+        <!-- 注册界面 -->
+        <div id="registerSection" class="card fade-in hidden" style="max-width:400px;margin:2rem auto">
+            <h2 class="text-2xl text-gradient mb-4 text-center">用户注册</h2>
+            <div class="flex flex-col gap-3">
+                <input type="text" id="regUsername" class="input" placeholder="用户名">
+                <input type="email" id="regEmail" class="input" placeholder="邮箱">
+                <input type="tel" id="regPhone" class="input" placeholder="手机号">
+                <input type="password" id="regPassword" class="input" placeholder="密码">
+                <button class="btn btn-primary w-full" onclick="register()">注册</button>
+                <p class="text-center text-muted text-sm mt-2">已有账号？<a href="#" onclick="showLogin();return false" style="color:var(--accent)">立即登录</a></p>
+            </div>
+        </div>
+        <!-- 简历上传 -->
+        <div id="uploadSection" class="card fade-in hidden">
+            <h2 class="text-xl font-bold mb-3">上传简历开始面试</h2>
+            <div class="flex flex-col gap-3">
+                <input type="file" id="resumeFile" class="input" accept=".pdf,.doc,.docx">
+                <button class="btn btn-primary" onclick="uploadResume()">开始AI面试</button>
+            </div>
+            <p class="text-muted text-sm mt-3">支持PDF、Word格式简历，AI将根据简历生成个性化面试问题</p>
+        </div>
+        <!-- 面试主界面 -->
+        <div id="interviewSection" class="hidden">
+            <div class="card mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold">面试进度</span>
+                    <span id="progressText">0/5</span>
+                </div>
+                <div class="progress"><div id="progressFill" class="progress-fill" style="width:0%"></div></div>
+            </div>
+            <div class="grid-2">
+                <div class="flex flex-col gap-4">
+                    <div class="card">
+                        <h3 class="text-lg font-bold mb-3">实时监控</h3>
+                        <div class="video">
+                            <video id="videoPreview" autoplay muted playsinline></video>
+                            <div id="cameraOverlay" class="overlay">
+                                <div class="icon">📹</div>
+                                <p>点击启动摄像头</p>
+                                <button class="btn btn-primary mt-3" onclick="startCamera()">启动摄像头</button>
+                            </div>
+                            <div id="recordingIndicator" class="rec hidden">
+                                <span class="dot"></span><span>录制中</span>
+                                <span id="recTime">00:00</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-3">
+                            <button id="btnStartRec" class="btn btn-danger" onclick="startRecording()" disabled>开始录制</button>
+                            <button id="btnStopRec" class="btn btn-secondary hidden" onclick="stopRecording()">停止录制</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-lg font-bold mb-3">表情分析</h3>
+                        <div id="expressionStatus" class="text-muted">等待摄像头启动...</div>
+                        <canvas id="expressionChart" style="max-height:150px"></canvas>
+                        <div class="grid-3 mt-3 text-sm">
+                            <div class="text-center">
+                                <div class="text-gradient text-2xl font-bold" id="emotionScore">--</div>
+                                <div class="text-muted">情绪得分</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-gradient text-2xl font-bold" id="expressionCount">0</div>
+                                <div class="text-muted">分析次数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-gradient text-2xl font-bold" id="avgScore">--</div>
+                                <div class="text-muted">平均分</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <div class="qcard">
+                        <div class="flex justify-between items-center mb-3">
+                            <span id="questionNum" class="badge badge-primary">问题 1</span>
+                            <span id="questionType" class="badge badge-warning">准备中</span>
+                        </div>
+                        <h3 id="questionText" class="text-xl font-bold mb-4">正在加载问题...</h3>
+                        <div id="scoreHint" class="text-muted text-sm mb-4">
+                            <strong>评分标准：</strong><span id="scoreStandard">--</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-lg font-bold mb-3">你的回答</h3>
+                        <textarea id="answerText" class="input" rows="6" placeholder="请输入你的回答..."></textarea>
+                        <div class="flex justify-between items-center mt-3">
+                            <div class="text-muted text-sm"><span id="charCount">0</span> 字</div>
+                            <button id="btnSubmit" class="btn btn-primary" onclick="submitAnswer()" disabled>提交答案</button>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button id="btnPrev" class="btn btn-secondary flex-1" onclick="prevQuestion()" disabled>上一题</button>
+                        <button id="btnNext" class="btn btn-secondary flex-1" onclick="nextQuestion()" disabled>下一题</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card mt-4 text-center">
+                <button id="btnFinish" class="btn btn-success btn-lg" onclick="finishInterview()" disabled>完成面试并生成报告</button>
+            </div>
+        </div>
+        <!-- 报告界面 -->
+        <div id="reportSection" class="hidden fade-in">
+            <h2 class="text-2xl text-gradient mb-4 text-center">面试评估报告</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-3">能力雷达图</h3>
+                    <canvas id="radarChart"></canvas>
+                </div>
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-3">综合评价</h3>
+                    <div class="text-center mb-4">
+                        <div class="text-gradient text-3xl font-bold" id="totalScore">--</div>
+                        <div id="totalLevel" class="text-muted">--</div>
+                    </div>
+                    <div id="recommendation" class="text-center mt-3"></div>
+                </div>
+            </div>
+            <div class="card mt-4">
+                <h3 class="text-lg font-bold mb-3">详细评价            <div class="card mt-4">
+                <h3 class="text-lg font-bold mb-3">详细评价</h3>
+                <div id="evaluationDetails"></div>
+            </div>
+            <div class="card mt-4">
+                <h3 class="text-lg font-bold mb-3">改进建议</h3>
+                <div id="improvements"></div>
+            </div>
+            <div class="text-center mt-4">
+                <button class="btn btn-primary" onclick="location.reload()">重新面试</button>
+            </div>
+        </div>
+    </main>
+    <div id="toast" class="toast"></div>
+    <script src="js/app.js"></script>
+</body>
+</html>
