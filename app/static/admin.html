@@ -1,20 +1,13 @@
-from flask import Flask
-
-app = Flask(__name__)
-
-@app.route('/api/test')
-def test():
-    return {'message': 'Hello, World!'}
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10006, debug=True, threaded=True)<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>面试系统管理</title>
-  <!-- Bootstrap CSS -->
-  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Bootstrap JS -->
+  <script src="js/bootstrap.bundle.min.js"></script>
   <!-- Vue.js -->
   <script src="js/vue.global.prod.js"></script>
   <!-- SweetAlert2 -->
@@ -63,7 +56,7 @@ if __name__ == '__main__':
       --warning-color: #f59e0b;
       --danger-color: #ef4444;
       --info-color: #3b82f6;
-      --background-color: #0f172a;
+      --background-color: #0a192f;
       --card-background: rgba(15, 23, 42, 0.8);
       --card-border: rgba(59, 130, 246, 0.2);
       --text-primary: #e2e8f0;
@@ -71,6 +64,36 @@ if __name__ == '__main__':
       --text-muted: #64748b;
       --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
       --gradient-secondary: linear-gradient(135deg, var(--secondary-color) 0%, #60a5fa 100%);
+      
+      /* 上传区域样式 */
+      --upload-border: rgba(100,180,255,0.4);
+      --upload-bg: rgba(15,20,50,0.8);
+      --upload-hover-border: #63b3ff;
+      --upload-hover-bg: rgba(99,179,255,0.15);
+    }
+    
+    /* 上传区域样式 */
+    .upload-zone {
+      border: 2px dashed var(--upload-border);
+      border-radius: 16px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: var(--upload-bg);
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--upload-hover-border);
+      background: var(--upload-hover-bg);
+    }
+    .upload-zone .upload-text {
+      color: #e2e8f0;
+      font-size: 16px;
+      margin: 12px 0 4px;
+    }
+    .upload-zone .upload-hint {
+      color: #999;
+      font-size: 12px;
     }
     
     /* 全局样式 */
@@ -80,13 +103,7 @@ if __name__ == '__main__':
       box-sizing: border-box;
     }
     
-    body {
-      font-family: var(--font-family);
-      font-size: var(--font-size-base);
-      font-weight: var(--font-weight-normal);
-      line-height: var(--line-height-normal);
-      letter-spacing: var(--letter-spacing-normal);
-      background: var(--background-color);
+    body { background: #0a192f;
       background-image: 
         radial-gradient(circle at 25% 25%, rgba(79, 70, 229, 0.05) 0%, transparent 50%),
         radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
@@ -815,9 +832,27 @@ if __name__ == '__main__':
     .space-y-3 > * + * {
       margin-top: 12px;
     }
-  </style>
+  
+/* Login风格样式 - 深蓝紫色调 */
+body { background: #0a192f !important; overflow-x: hidden; }
+.navbar { background: linear-gradient(135deg, rgba(15,20,50,0.95) 0%, rgba(25,30,65,0.9) 100%) !important; border: 1px solid rgba(100,180,255,0.2) !important; backdrop-filter: blur(20px); }
+.card { background: linear-gradient(135deg, rgba(15,20,50,0.92) 0%, rgba(25,30,65,0.9) 100%) !important; border: 1px solid rgba(100,180,255,0.25) !important; backdrop-filter: blur(20px); box-shadow: 0 0 40px rgba(99,102,241,0.15), 0 8px 32px rgba(0,0,0,0.3); }
+.card:hover { box-shadow: 0 0 60px rgba(99,102,241,0.25), 0 12px 40px rgba(0,0,0,0.4); transform: translateY(-2px); }
+.form-control, .form-select { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(100,180,255,0.25) !important; color: #fff !important; }
+.form-control:focus { border-color: #63b3ff !important; box-shadow: 0 0 20px rgba(99,179,255,0.25) !important; }
+.btn-primary { background: linear-gradient(135deg, #6366f1, #63b3ff) !important; border: none !important; box-shadow: 0 4px 20px rgba(99,102,241,0.3); }
+.btn-primary:hover { box-shadow: 0 6px 30px rgba(99,102,241,0.5) !important; transform: translateY(-2px); }
+h1, h2, h3, h4, h5, h6, .card-title, .card-text, label, p, span, li { color: #e2e8f0 !important; }
+.table { color: #e2e8f0 !important; }
+.table-hover tbody tr:hover { background-color: rgba(99,102,241,0.1) !important; }
+.modal-content { background: linear-gradient(135deg, rgba(15,20,50,0.98) 0%, rgba(25,30,65,0.95) 100%) !important; border: 1px solid rgba(100,180,255,0.3) !important; }
+.dropdown-menu { background: rgba(15,20,50,0.98) !important; border: 1px solid rgba(100,180,255,0.25) !important; }
+.dropdown-item { color: #e2e8f0 !important; }
+.dropdown-item:hover { background: rgba(99,102,241,0.2) !important; }
+</style>
 </head>
 <body>
+  <canvas id="aurora" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
   <div id="app" class="container">
     <!-- 顶部导航栏 -->
     <nav class="navbar navbar-expand-lg navbar-dark mb-4 rounded">
@@ -920,9 +955,18 @@ if __name__ == '__main__':
         </div>
         
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-400 mb-1">上传简历</label>
-          <input type="file" class="form-control" @change="handleResumeUpload" accept=".pdf,.doc,.docx">
-          <p v-if="resumeFile" class="text-xs text-green-400 mt-1">{{ resumeFile.name }} 已上传</p>
+          <label class="block text-sm font-medium text-gray-400 mb-2">
+            <i class="bi bi-cloud-upload me-1"></i>上传简历
+          </label>
+          <div class="upload-zone" @click="triggerResumeUpload" @dragover.prevent="dragOver" @dragleave="dragLeave" @drop.prevent="handleDrop">
+            <i class="bi bi-file-earmark-arrow-up" style="font-size: 48px; color: #63b3ff;"></i>
+            <p class="upload-text">拖拽文件到此处，或点击上传</p>
+            <p class="upload-hint">支持 PDF、Word、图片格式</p>
+          </div>
+          <input type="file" ref="resumeInput" @change="handleResumeUpload" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none">
+          <p v-if="resumeFile" class="text-xs text-green-400 mt-2">
+            <i class="bi bi-check-circle"></i> {{ resumeFile.name }} 已上传
+          </p>
         </div>
         
         <button class="btn btn-primary w-full py-3" @click="handleStartTraining">
@@ -1101,12 +1145,45 @@ if __name__ == '__main__':
           return url;
         },
         
+        // 触发简历上传
+        triggerResumeUpload() {
+          this.$refs.resumeInput.click();
+        },
+        
+        // 拖拽悬停
+        dragOver(event) {
+          event.target.classList.add('dragover');
+        },
+        
+        // 拖拽离开
+        dragLeave(event) {
+          event.target.classList.remove('dragover');
+        },
+        
+        // 处理文件拖放
+        handleDrop(event) {
+          event.target.classList.remove('dragover');
+          const files = event.dataTransfer.files;
+          if (files.length > 0) {
+            const file = files[0];
+            // 模拟change事件
+            this.handleResumeUpload({ target: { files: [file] } });
+          }
+        },
+        
         // 处理简历上传
         handleResumeUpload(event) {
           const file = event.target.files[0];
           if (file) {
             // 检查文件类型
-            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/markdown'];
+            const allowedTypes = [
+              'application/pdf', 
+              'application/msword', 
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              'text/markdown',
+              'image/jpeg',
+              'image/png'
+            ];
             if (!allowedTypes.includes(file.type)) {
               Swal.fire({
                 title: '文件类型错误',
@@ -1229,11 +1306,28 @@ if __name__ == '__main__':
             }
           } catch (error) {
             console.error('上传简历失败:', error);
-            Swal.fire({
-              title: '错误',
-              text: '上传简历失败，请重试',
-              icon: 'error'
-            });
+            console.error('错误类型:', error.name);
+            console.error('错误消息:', error.message);
+            // 检查是否是超时错误
+            if (error.name === 'AbortError' || error.message.includes('abort')) {
+              Swal.fire({
+                title: '错误',
+                text: '上传超时，请重试或上传更小的文件',
+                icon: 'error'
+              });
+            } else if (!this.resumeFile) {
+              Swal.fire({
+                title: '错误',
+                text: '请先上传简历文件',
+                icon: 'error'
+              });
+            } else {
+              Swal.fire({
+                title: '错误',
+                text: '上传简历失败，请重试',
+                icon: 'error'
+              });
+            }
             // 重新启用按钮
             if (startButton) {
               startButton.disabled = false;
@@ -1266,4 +1360,65 @@ if __name__ == '__main__':
   <!-- Bootstrap JS -->
   <script src="js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
+<script>
+var canvas=document.getElementById("aurora");
+var ctx=canvas.getContext("2d");
+var W,H,time=0;
+var PI2=Math.PI*2;
+var stars=[],particles=[];
+var meteors=[];
+var mouse={x:0,y:0,cx:0,cy:0};
+var lastMouse={x:0,y:0};
+var auroraBands=[
+  {x:0.15,hue1:120,hue2:280,op:0.3,speed:0.0003,phase:0},
+  {x:0.3,hue1:140,hue2:300,op:0.25,speed:0.00035,phase:1},
+  {x:0.5,hue1:160,hue2:260,op:0.28,speed:0.00028,phase:2},
+  {x:0.7,hue1:180,hue2:320,op:0.22,speed:0.0004,phase:3},
+  {x:0.85,hue1:100,hue2:340,op:0.26,speed:0.00032,phase:4}
+];
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;initAll()}
+function initAll(){
+  stars=[];for(var i=0;i<30;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+0.3,phase:Math.random()*PI2});
+  particles=[];
+}
+function h2r(h){var b=parseInt(h.slice(1),16);return(b>>16)+","+((b>>8)&255)+","+(b&255)}
+function drawBg(){ctx.fillStyle="#0a192f";ctx.fillRect(0,0,W,H)}
+function drawStars(){for(var i=0;i<stars.length;i++){var s=stars[i];var t=0.5;ctx.globalAlpha=t*0.9;ctx.fillStyle="rgba(200,220,255,1)";ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,PI2);ctx.fill()}ctx.globalAlpha=1}
+function drawAurora(){
+  var now=time*0.001;
+  ctx.save();
+  ctx.globalCompositeOperation="screen";
+  for(var i=0;i<auroraBands.length;i++){
+    var band=auroraBands[i];
+    var cx=band.x*W+Math.sin(now*band.speed*500+band.phase)*W*0.03;
+    var op=band.op*(0.7+0.3*Math.sin(now*band.speed*300+band.phase));
+    var g=ctx.createRadialGradient(cx,H*0.6,0,cx,H*0.6,W*0.4);
+    g.addColorStop(0,"hsla("+band.hue1+",80%,60%,"+op+")");
+    g.addColorStop(0.5,"hsla("+band.hue2+",70%,50%,"+(op*0.6)+")");
+    g.addColorStop(1,"transparent");
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.moveTo(0,H);
+    ctx.lineTo(0,H*0.4);
+    for(var x=0;x<=W;x+=3){
+      var baseY=H*0.5;
+      var wave=Math.sin(x*0.004+now*band.speed*1000+band.phase)*H*0.15;
+      wave+=Math.sin(x*0.002+now*band.speed*600+band.phase*2)*H*0.1;
+      wave+=Math.sin(x*0.006+now*band.speed*400+band.phase*3)*H*0.05;
+      ctx.lineTo(x,baseY+wave);
+    }
+    ctx.lineTo(W,H);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+function drawParticles(){ctx.save();ctx.globalCompositeOperation="screen";for(var i=0;i<particles.length;i++){var p=particles[i];ctx.globalAlpha=p.op;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,PI2);ctx.fill();p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W||p.y<0||p.y>H){p.x=Math.random()*W;p.y=Math.random()*H}}ctx.globalAlpha=1;ctx.restore()}
+function drawMouseHalo(){mouse.cx+=(mouse.x-mouse.cx)*0.1;mouse.cy+=(mouse.y-mouse.cy)*0.1;var g=ctx.createRadialGradient(mouse.cx,mouse.cy,0,mouse.cx,mouse.cy,150);g.addColorStop(0,"rgba(99,102,241,0.15)");g.addColorStop(1,"transparent");ctx.fillStyle=g;ctx.beginPath();ctx.arc(mouse.cx,mouse.cy,150,0,PI2);ctx.fill()}
+function drawRipples(){ctx.save();for(var i=ripples.length-1;i>=0;i--){var r=ripples[i];var age=(Date.now()-r.t)/2000;if(age>1){ripples.splice(i,1);continue}ctx.globalAlpha=1-age;ctx.strokeStyle="rgba(99,102,241,0.5)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(r.x,r.y,age*200,0,PI2);ctx.stroke()}ctx.restore()}
+function animate(){time=requestAnimationFrame(animate);resize();drawBg();drawStars();drawAurora();drawMouseHalo();drawRipples()}
+canvas.addEventListener("click",function(e){ripples.push({x:e.clientX,y:e.clientY,t:Date.now()})});
+canvas.addEventListener("mousemove",function(e){mouse.x=e.clientX;mouse.y=e.clientY});
+document.addEventListener("mouseleave",function(){mouse.x=W/2;mouse.y=H/2});
+resize();animate();
+</script></html>

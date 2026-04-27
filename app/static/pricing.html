@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>套餐购买 - AI面试系统</title>
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <script src="js/vue.global.prod.js"></script>
+  <script src="js/sweetalert2.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .pricing-header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+    .pricing-header h1 {
+      color: #fff;
+      font-size: 36px;
+      margin-bottom: 15px;
+    }
+    .pricing-header p {
+      color: #94a3b8;
+      font-size: 18px;
+    }
+    .pricing-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .pricing-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+    .pricing-card.recommended {
+      border: 3px solid #667eea;
+      position: relative;
+    }
+    .recommended-badge {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 8px 25px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .plan-name {
+      font-size: 24px;
+      color: #333;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .plan-price {
+      font-size: 48px;
+      color: #667eea;
+      font-weight: bold;
+    }
+    .plan-price span {
+      font-size: 18px;
+      color: #666;
+    }
+    .plan-period {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .plan-features {
+      list-style: none;
+      padding: 0;
+      margin: 30px 0;
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+    }
+    .plan-features li {
+      padding: 12px 0;
+      color: #555;
+      font-size: 16px;
+    }
+    .plan-features li::before {
+      content: "✓ ";
+      color: #4ade80;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .btn-select {
+      width: 100%;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-select.primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-select.primary:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+    .btn-select.secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+    .btn-select.secondary:hover {
+      background: #d0d0d0;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 40px;
+    }
+    .back-link a {
+      color: #667eea;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    .back-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="pricing-header">
+        <h1>选择您的套餐</h1>
+        <p>解锁更多AI面试功能，获得更好的招聘体验</p>
+      </div>
+      
+      <div class="row justify-content-center">
+        <!-- 免费套餐 -->
+        <div class="col-md-4">
+          <div class="pricing-card">
+            <div class="plan-name">免费体验</div>
+            <div class="plan-price">¥0 <span>/ 永久</span></div>
+            <div class="plan-period">无需付费，立即使用</div>
+            <ul class="plan-features">
+              <li>3次AI模拟面试</li>
+              <li>10分钟语音合成</li>
+              <li>5次表情分析报告</li>
+              <li>基础面试报告</li>
+              <li>简历解析</li>
+            </ul>
+            <button class="btn-select secondary" @click="selectPlan('free')">
+              免费使用
+            </button>
+          </div>
+        </div>
+        
+        <!-- 专业版套餐 -->
+        <div class="col-md-4">
+          <div class="pricing-card recommended">
+            <div class="recommended-badge">推荐</div>
+            <div class="plan-name">专业版</div>
+            <div class="plan-price">¥99 <span>/ 月</span></div>
+            <div class="plan-period">每月仅需99元</div>
+            <ul class="plan-features">
+              <li>无限次AI模拟面试</li>
+              <li>100分钟语音合成</li>
+              <li>无限次表情分析</li>
+              <li>详细面试报告</li>
+              <li>简历解析</li>
+              <li>多岗位模板</li>
+              <li>优先客服支持</li>
+            </ul>
+            <button class="btn-select primary" @click="selectPlan('pro')">
+              立即开通
+            </button>
+          </div>
+        </div>
+        
+        <!-- 企业版套餐 -->
+        <div class="col-md-4">
+          <div class="pricing-card">
+            <div class="plan-name">企业版</div>
+            <div class="plan-price">¥299 <span>/ 月</span></div>
+            <div class="plan-period">适合团队使用</div>
+            <ul class="plan-features">
+              <li>无限次AI模拟面试</li>
+              <li>500分钟语音合成</li>
+              <li>无限次表情分析</li>
+              <li>完整面试报告</li>
+              <li>简历解析</li>
+              <li>自定义岗位模板</li>
+              <li>API接口访问</li>
+              <li>专属客服支持</li>
+            </ul>
+            <button class="btn-select primary" @click="selectPlan('enterprise')">
+              联系我们
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="back-link">
+        <a href="/static/login.html">返回登录</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    
+    createApp({
+      setup() {
+        const selectPlan = async (planType) => {
+          if (planType === 'free') {
+            await Swal.fire({
+              title: '免费套餐',
+              text: '您已获得免费试用额度，无需支付即可体验基础功能',
+              icon: 'info',
+              confirmButtonText: '开始使用'
+            }).then(() => {
+              window.location.href = '/static/login.html';
+            });
+          } else if (planType === 'pro') {
+            await Swal.fire({
+              title: '即将跳转到支付',
+              text: '专业版套餐：¥99/月',
+              icon: 'info',
+              confirmButtonText: '确认支付'
+            }).then(() => {
+              // 调用支付API
+              window.location.href = '/static/login.html?plan=pro';
+            });
+          } else if (planType === 'enterprise') {
+            await Swal.fire({
+              title: '企业版咨询',
+              text: '请联系客服获取企业版报价：support@en9.cn',
+              icon: 'info',
+              confirmButtonText: '确定'
+            });
+          }
+        };
+        
+        return {
+          selectPlan
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

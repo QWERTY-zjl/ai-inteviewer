@@ -560,7 +560,8 @@ INTERVIEWER_VOICES = {
 
 def synthesize_speech(text, voice_type="professional_male"):
     """
-    使用阿里云 qwen-tts 模型进行语音合成
+    使用阿里云 Qwen-TTS 模型进行语音合成
+    基于官方文档: https://help.aliyun.com/zh/model-studio/qwen-tts
     """
     try:
         # 检查text参数
@@ -573,30 +574,46 @@ def synthesize_speech(text, voice_type="professional_male"):
             return None, "未配置 API Key"
 
         # 音色映射
-        voice = "zh-CN-YunxiNeural"  # 默认专业男声
+        voice_map = {
+            "professional_male": "Ethan",
+            "professional_female": "Serena",
+            "energetic_male": "Ethan",
+            "gentle_female": "Cherry"
+        }
+        voice = voice_map.get(voice_type, "Ethan")
         
-        # 调用 qwen-tts
+        # 调用 qwen3-tts-flash (官方推荐)
         import requests
-        url = "https://dashscope.aliyuncs.com/api/v1/services/audio/tts"
+        url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         data = {
-            "model": "qwen-tts",
+            "model": "qwen3-tts-flash",
             "input": {"text": text},
-            "parameters": {"voice": voice, "format": "mp3", "sample_rate": 24000}
+            "parameters": {
+                "voice": voice,
+                "language_type": "Chinese"
+            }
         }
         
         response = requests.post(url, headers=headers, json=data, timeout=60)
         
         if response.status_code == 200:
             result = response.json()
-            audio_base64 = result.get("output", {}).get("audio", "")
-            if audio_base64:
-                import base64
-                return base64.b64decode(audio_base64), None
-            return None, "无音频数据"
+            # 从响应中获取音频URL
+            audio_url = result.get("output", {}).get("audio", {}).get("url", "")
+            
+            if not audio_url:
+                return None, "未获取到音频URL"
+            
+            # 从URL下载音频
+            audio_response = requests.get(audio_url, timeout=60)
+            if audio_response.status_code == 200:
+                return audio_response.content, None
+            else:
+                return None, f"下载音频失败: {audio_response.status_code}"
         else:
             return None, f"API错误: {response.status_code} - {response.text[:100]}"
     except Exception as e:
@@ -610,6 +627,17 @@ def get_tts_voices():
             "description": config["description"]
         })
     return jsonify({"voices": voices})
+
+@app.route('/api/tts/voices', methods=['GET'])
+def get_tts_voices():
+    """获取可用的音色列表"""
+    voices = [
+        {"id": "professional_male", "name": "专业男声", "gender": "male"},
+        {"id": "professional_female", "name": "专业女声", "gender": "female"},
+        {"id": "gentle_female", "name": "温柔女声", "gender": "female"},
+        {"id": "casual_male", "name": "随和男声", "gender": "male"}
+    ]
+    return jsonify({"status": "success", "voices": voices})
 
 @app.route('/api/tts/synthesize', methods=['POST'])
 def synthesize_tts():
@@ -631,9 +659,55 @@ def synthesize_tts():
             "message": "使用浏览器内置语音合成"
         })
     
-    # 返回音频数据
-    from flask import Response
-    return Response(audio_data, mimetype='audio/mpeg')
+    # 返回音频数据（JSON格式，包含base64编码）
+    import base64
+    audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+    return jsonify({
+        "status": "success",
+        "audio": audio_base64,
+        "format": "wav"
+    })
+
+@app.route('/api/asr/recognize', methods=['POST'])
+def recognize_audio():
+    """语音识别API - 将音频转换为文字"""
+    try:
+        from app.services.speech_service import transcribe_audio
+        
+        # 支持两种输入方式：FormData 或 JSON
+        if 'audio' in request.files:
+            # FormData 方式
+            audio_file = request.files['audio']
+            audio_data = audio_file.read()
+            # 从文件名获取格式，或默认为wav
+            filename = audio_file.filename or 'audio.wav'
+            format = filename.split('.')[-1].lower() if '.' in filename else 'wav'
+        elif request.is_json and 'audio' in request.json:
+            # JSON 方式 (base64编码)
+            import base64
+            audio_b64 = request.json.get('audio')
+            audio_data = base64.b64decode(audio_b64)
+            format = request.json.get('format', 'wav')
+        else:
+            return jsonify({"error": "未提供音频数据"}), 400
+        
+        # 调用语音识别
+        text, error = transcribe_audio(audio_data, format)
+        
+        if error:
+            return jsonify({"success": False, "error": error}), 500
+        
+        if not text:
+            return jsonify({"success": False, "error": "未识别到文字"}), 400
+        
+        return jsonify({
+            "success": True,
+            "text": text
+        })
+        
+    except Exception as e:
+        logger.error(f"[ASR] 语音识别错误: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/interview/<token>/set_voice', methods=['POST'])
 def set_interview_voice(token):
