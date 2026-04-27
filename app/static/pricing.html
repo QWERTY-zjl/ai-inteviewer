@@ -8,128 +8,529 @@
   <script src="js/vue.global.prod.js"></script>
   <script src="js/sweetalert2.js"></script>
   <style>
-    body {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    .pricing-header {
-      text-align: center;
-      margin-bottom: 50px;
-    }
-    .pricing-header h1 {
-      color: #fff;
-      font-size: 36px;
-      margin-bottom: 15px;
-    }
-    .pricing-header p {
-      color: #94a3b8;
-      font-size: 18px;
-    }
-    .pricing-card {
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 20px;
-      padding: 40px;
-      margin-bottom: 30px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-    .pricing-card:hover {
-      transform: translateY(-10px);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    }
-    .pricing-card.recommended {
-      border: 3px solid #667eea;
-      position: relative;
-    }
-    .recommended-badge {
-      position: absolute;
-      top: -15px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 8px 25px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: bold;
-    }
-    .plan-name {
-      font-size: 24px;
-      color: #333;
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
-    .plan-price {
-      font-size: 48px;
-      color: #667eea;
-      font-weight: bold;
-    }
-    .plan-price span {
-      font-size: 18px;
-      color: #666;
-    }
-    .plan-period {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 20px;
-    }
-    .plan-features {
-      list-style: none;
-      padding: 0;
-      margin: 30px 0;
-      border-top: 1px solid #eee;
-      border-bottom: 1px solid #eee;
-    }
-    .plan-features li {
-      padding: 12px 0;
-      color: #555;
-      font-size: 16px;
-    }
-    .plan-features li::before {
-      content: "✓ ";
-      color: #4ade80;
-      font-weight: bold;
-      margin-right: 10px;
-    }
-    .btn-select {
-      width: 100%;
-      padding: 15px;
-      border-radius: 10px;
-      font-size: 18px;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-    .btn-select.primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-    .btn-select.primary:hover {
-      opacity: 0.9;
-      transform: scale(1.02);
-    }
-    .btn-select.secondary {
-      background: #e0e0e0;
-      color: #333;
-    }
-    .btn-select.secondary:hover {
-      background: #d0d0d0;
-    }
-    .back-link {
-      text-align: center;
-      margin-top: 40px;
-    }
-    .back-link a {
-      color: #667eea;
-      text-decoration: none;
-      font-size: 16px;
-    }
-    .back-link a:hover {
-      text-decoration: underline;
-    }
-  </style>
+
+10
+/* ═══════════════════════════════════════
+11   
+DESIGN TOKENS  (same as all other pages)
+12
+═══════════════════════════════════════ */
+13
+:root {
+14  
+--bg:     #070b27;
+15  
+--s1:     rgba(10,16,52,.72);
+16  
+--s2:     rgba(14,22,68,.88);
+17  
+--a1:     #00E5FF;
+18  
+--a2:     #0099FF;
+19  
+--purple: #7B2FFD;
+20  
+--green:  #00F5D4;
+21  
+--text:   #e0e0e0;
+22  
+--muted:  #6b7fa8;
+23  
+--border: rgba(0,180,255,.16);
+24  
+--grad:   linear-gradient(120deg,#00E5FF,#0099FF,#7B2FFD);
+25  
+--gbtn:   linear-gradient(135deg,#7B2FFD,#0099FF);
+26
+}
+27
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+28
+html { scroll-behavior: smooth; }
+29
+body {
+30  
+background: var(--bg);
+31  
+color: var(--text);
+32  
+font-family: 'Noto Sans SC', sans-serif;
+33  
+font-size: 14px;
+34  
+min-height: 100vh;
+35  
+overflow-x: hidden;
+36
+}
+37 
+38
+/* ── Aurora canvas ── */
+39
+#aurora { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+40 
+41
+/* ── Gradient text ── */
+42
+.ag  { background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+43 
+44
+/* ═══════════════════════════════════════
+45   
+TOPBAR  (unified with all pages)
+46
+═══════════════════════════════════════ */
+47
+#topbar {
+48  
+position: fixed; top:0; left:0; right:0; z-index:50;
+49  
+height: 50px; display:flex; align-items:center; justify-content:space-between;
+50  
+padding: 0 28px;
+51  
+background: rgba(7,11,39,.88);
+52  
+backdrop-filter: blur(20px);
+53  
+border-bottom: 1px solid var(--border);
+54
+}
+55
+.logo { display:flex; align-items:center; gap:9px; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; }
+56
+.logo-icon {
+57  
+width:26px; height:26px; border-radius:7px;
+58  
+background: var(--gbtn);
+59  
+display:flex; align-items:center; justify-content:center;
+60  
+box-shadow: 0 0 12px rgba(123,47,253,.4);
+61
+}
+62
+.nav-r { display:flex; align-items:center; gap:4px; }
+63
+.nav-btn {
+64  
+font-size:12px; color:var(--muted); background:none; border:none; cursor:pointer;
+65  
+padding:5px 10px; border-radius:7px; font-family:'Noto Sans SC',sans-serif;
+66  
+transition: color .2s, background .2s;
+67
+}
+68
+.nav-btn:hover { color:var(--text); background:rgba(255,255,255,.05); }
+69
+.nav-btn.buy { color:var(--a1); border:1px solid rgba(0,229,255,.22); }
+70
+.nav-btn.buy:hover { background:rgba(0,229,255,.08); }
+71
+.nav-sep { width:1px; height:12px; background:var(--border); }
+72 
+73
+/* ═══════════════════════════════════════
+74   
+PAGE WRAPPER
+75
+═══════════════════════════════════════ */
+76
+#page {
+77  
+position: relative; z-index:1;
+78  
+min-height: 100vh;
+79  
+display: flex; flex-direction: column;
+80  
+align-items: center; justify-content: center;
+81  
+padding: 80px 24px 56px;
+82
+}
+83 
+84
+/* ── Title block ── */
+85
+.title-block { text-align:center; margin-bottom: 52px; }
+86
+.main-title {
+87  
+font-size: clamp(26px,4vw,40px);
+88  
+font-weight: 800; letter-spacing: -.5px; line-height:1.1;
+89  
+margin-bottom: 12px;
+90
+}
+91
+.sub-title { font-size:14px; color:var(--muted); }
+92 
+93
+/* ═══════════════════════════════════════
+94   
+PRICING GRID  — equal-width equal-height
+95
+═══════════════════════════════════════ */
+96
+.pricing-grid {
+97  
+display: grid;
+98  
+grid-template-columns: repeat(3, 320px);
+99  
+gap: 20px;
+100  
+align-items: stretch;     /* equal height via grid */
+101  
+justify-content: center;
+102
+}
+103 
+104
+/* ── Base card ── */
+105
+.plan-card {
+106  
+/* glass */
+107  
+background: var(--s1);
+108  
+backdrop-filter: blur(20px) saturate(160%);
+109  
+-webkit-backdrop-filter: blur(20px) saturate(160%);
+110  
+border: 1px solid var(--border);
+111  
+border-radius: 18px;
+112  
+padding: 32px 28px 28px;
+113  
+display: flex; flex-direction: column;
+114  
+/* ← equal height: each card fills the grid row */
+115  
+position: relative; overflow: hidden;
+116  
+transition: transform .3s cubic-bezier(.4,0,.2,1), box-shadow .3s, border-color .3s;
+117  
+cursor: default;
+118
+}
+119
+/* Top accent line */
+120
+.plan-card::before {
+121  
+content: ''; position:absolute; top:0; left:0; right:0; height:1.5px;
+122  
+background: var(--grad); opacity:.42; border-radius:18px 18px 0 0;
+123
+}
+124
+/* Hover lift */
+125
+.plan-card:hover {
+126  
+transform: translateY(-6px);
+127  
+box-shadow: 0 20px 50px rgba(0,0,0,.45), 0 0 0 1px rgba(0,229,255,.22);
+128
+}
+129 
+130
+/* ── Recommended card ── */
+131
+.plan-card.recommended {
+132  
+border-color: rgba(0,229,255,.35);
+133  
+box-shadow: 0 0 30px rgba(0,229,255,.1), 0 0 0 1px rgba(0,229,255,.2);
+134
+}
+135
+.plan-card.recommended:hover {
+136  
+transform: translateY(-6px);
+137  
+box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 40px rgba(0,229,255,.2), 0 0 0 1px rgba(0,229,255,.4);
+138
+}
+139 
+140
+/* ── Recommend badge ── */
+141
+.rec-badge-wrap {
+142  
+position: absolute; top: -1px; left:50%; transform:translateX(-50%);
+143  
+z-index:2;
+144
+}
+145
+.rec-badge {
+146  
+display: inline-flex; align-items:center; gap:5px;
+147  
+background: var(--gbtn);
+148  
+padding: 4px 14px; border-radius: 0 0 10px 10px;
+149  
+font-size: 11px; font-weight:700; color:#fff;
+150  
+letter-spacing:.5px;
+151  
+box-shadow: 0 4px 14px rgba(123,47,253,.45);
+152
+}
+153 
+154
+/* ── Card inner sections ── */
+155
+.plan-name {
+156  
+font-size:15px; font-weight:700; text-align:center;
+157  
+margin-bottom:20px; margin-top:10px;
+158
+}
+159
+/* Push name down if no badge */
+160
+.plan-card:not(.recommended) .plan-name { margin-top:0; }
+161 
+162
+.plan-price-row { text-align:center; margin-bottom:6px; }
+163
+.plan-price {
+164  
+font-size:42px; font-weight:800; line-height:1;
+165  
+font-family:'JetBrains Mono',monospace;
+166  
+display: inline-flex; align-items:baseline; gap:4px;
+167
+}
+168
+.currency { font-size:22px; font-weight:700; }
+169
+.period { font-size:14px; color:var(--muted); font-weight:400; margin-left:4px; font-family:'Noto Sans SC',sans-serif; }
+170
+.plan-desc { font-size:12px; color:var(--muted); text-align:center; margin-bottom:24px; min-height:18px; }
+171 
+172
+/* Feature list */
+173
+.feature-list {
+174  
+list-style: none;
+175  
+display: flex; flex-direction:column; gap:11px;
+176  
+flex:1;                    /* fills remaining space so button aligns to bottom */
+177  
+margin-bottom: 28px;
+178
+}
+179
+.feature-item {
+180  
+display: flex; align-items:center; gap:10px;
+181  
+font-size:13px; color:var(--text); line-height:1.4;
+182  
+transition: color .2s;
+183
+}
+184
+.feature-item:hover { color:#fff; }
+185
+.check-icon { flex-shrink:0; transition:transform .2s; }
+186
+.feature-item:hover .check-icon { transform:scale(1.2); }
+187 
+188
+/* Divider inside card */
+189
+.card-divider {
+190  
+height:1px;
+191  
+background:linear-gradient(90deg,transparent,rgba(0,180,255,.18),transparent);
+192  
+margin-bottom:24px;
+193
+}
+194 
+195
+/* ── Buttons ── */
+196
+.plan-btn {
+197  
+width:100%; padding:13px 0; border-radius:10px;
+198  
+font-size:14px; font-weight:600; cursor:pointer;
+199  
+font-family:'Noto Sans SC',sans-serif;
+200  
+position:relative; overflow:hidden;
+201  
+transition:transform .18s, box-shadow .2s, background .2s;
+202  
+border:none;
+203
+}
+204
+.plan-btn:active { transform:scale(.98); }
+205 
+206
+/* Ghost button — free tier */
+207
+.btn-ghost {
+208  
+background: transparent;
+209  
+border: 1px solid rgba(0,229,255,.3);
+210  
+color: var(--a1);
+211
+}
+212
+.btn-ghost:hover {
+213  
+background: rgba(0,229,255,.07);
+214  
+border-color: rgba(0,229,255,.55);
+215  
+box-shadow: 0 0 18px rgba(0,229,255,.15);
+216
+}
+217 
+218
+/* Gradient button — paid tiers */
+219
+.btn-grad {
+220  
+background: var(--gbtn);
+221  
+color: #fff;
+222  
+box-shadow: 0 0 20px rgba(123,47,253,.3);
+223
+}
+224
+.btn-grad:hover {
+225  
+box-shadow: 0 0 32px rgba(123,47,253,.55), 0 0 60px rgba(0,153,255,.2);
+226  
+transform: translateY(-1px);
+227
+}
+228
+/* Shimmer sweep on hover */
+229
+.btn-grad::after {
+230  
+content:''; position:absolute; inset:0;
+231  
+background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);
+232  
+background-size:200% 100%; background-position:200% 0;
+233  
+transition:background-position .4s ease;
+234
+}
+235
+.btn-grad:hover::after { background-position:-50% 0; }
+236 
+237
+/* Ripple */
+238
+.ripple-el {
+239  
+position:absolute; border-radius:50%;
+240  
+background:rgba(255,255,255,.22);
+241  
+transform:scale(0); animation:ripple .5s linear;
+242  
+pointer-events:none;
+243
+}
+244
+@keyframes ripple { to { transform:scale(4); opacity:0; } }
+245 
+246
+/* ═══════════════════════════════════════
+247   
+FADE-IN SEQUENCE  (cards from center out)
+248
+═══════════════════════════════════════ */
+249
+.fi { opacity:0; transform:translateY(24px); animation:fi .7s cubic-bezier(.4,0,.2,1) forwards; }
+250
+.fi-title  { animation-delay:.05s; }
+251
+.fi-center { animation-delay:.12s; }
+252
+.fi-left   { animation-delay:.22s; }
+253
+.fi-right  { animation-delay:.22s; }
+254
+.fi-bottom { animation-delay:.32s; }
+255
+@keyframes fi { to { opacity:1; transform:translateY(0); } }
+256 
+257
+/* ── Back link ── */
+258
+.back-link {
+259  
+display:inline-block; margin-top:44px;
+260  
+font-size:13px; color:var(--muted); text-decoration:none;
+261  
+transition:color .2s;
+262
+}
+263
+.back-link:hover { color:var(--a1); }
+264 
+265
+/* ═══════════════════════════════════════
+266   
+RESPONSIVE
+267
+═══════════════════════════════════════ */
+268
+@media (max-width:1060px) {
+269  
+.pricing-grid { grid-template-columns: repeat(3, 1fr); gap:14px; }
+270
+}
+271
+@media (max-width:760px) {
+272  
+.pricing-grid { grid-template-columns: 1fr; max-width:380px; }
+273  
+.plan-card:hover { transform:none; }          /* disable lift on touch */
+274  
+.plan-card.recommended:hover { transform:none; }
+275
+}
+276 
+277
+/* Scrollbar */
+278
+::-webkit-scrollbar { width:5px; }
+279
+::-webkit-scrollbar-thumb { background:rgba(0,229,255,.18); border-radius:3px; }
+280
+
+</style>
 </head>
 <body>
   <div id="app">
