@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>TTS测试</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 600px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .result { margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px; }
+        audio { margin-top: 10px; width: 100%; }
+    </style>
+</head>
+<body>
+    <h1>TTS音色测试</h1>
+    <p>选择一个音色，点击按钮测试语音合成：</p>
+    
+    <div>
+        <button onclick="testTTS('professional_male')">专业男声(Ethan)</button>
+        <button onclick="testTTS('professional_female')">专业女声(Serena)</button>
+        <button onclick="testTTS('energetic_male')">活力男声(Ethan)</button>
+        <button onclick="testTTS('gentle_female')">温柔女声(Cherry)</button>
+    </div>
+    
+    <div id="result" class="result"></div>
+    
+    <script>
+        async function testTTS(voiceType) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<p>正在合成: ${voiceType}...</p>`;
+            
+            try {
+                const response = await fetch('/api/tts/synthesize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        text: '您好，我是您的AI面试官。',
+                        voice_type: voiceType 
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('API响应:', data);
+                
+                if (data.status === 'success' && data.audio) {
+                    // 解码base64音频
+                    const audioData = atob(data.audio);
+                    const arrayBuffer = new ArrayBuffer(audioData.length);
+                    const view = new Uint8Array(arrayBuffer);
+                    for (let i = 0; i < audioData.length; i++) {
+                        view[i] = audioData.charCodeAt(i);
+                    }
+                    
+                    const format = data.format || 'wav';
+                    const audioBlob = new Blob([arrayBuffer], { type: `audio/${format}` });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    resultDiv.innerHTML = `
+                        <p>✅ 成功合成 ${voiceType}</p>
+                        <p>格式: ${format}, 大小: ${audioData.length} 字节</p>
+                        <audio controls src="${audioUrl}"></audio>
+                    `;
+                } else if (data.use_browser_tts) {
+                    resultDiv.innerHTML = `<p>⚠️ 服务器建议使用浏览器TTS: ${data.message}</p>`;
+                } else {
+                    resultDiv.innerHTML = `<p>❌ 失败: ${JSON.stringify(data)}</p>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<p>❌ 请求失败: ${err.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

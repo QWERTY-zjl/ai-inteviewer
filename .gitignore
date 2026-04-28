@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+
+# Environment (密钥文件)
+.env
+.env.local
+.env.production
+*.env
+
+# Docker
+.docker/
+
+# Node (if any)
+node_modules/
+npm-debug.log
+
+# Misc
+*.bak
+*.tmp
+.cache/
+.pytest_cache/
+temp/
+
+# 测试文件
+test_*.py
+test_*.ps1

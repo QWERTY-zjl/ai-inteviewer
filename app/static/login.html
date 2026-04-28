@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>登录 - AI面试系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;font-family:Microsoft YaHei,sans-serif;overflow:hidden;background:#070b27}
+#aurora{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
+.c{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.b{position:relative;background:linear-gradient(135deg,rgba(15,20,50,0.92) 0%,rgba(25,30,65,0.9) 100%);backdrop-filter:blur(24px);border:1px solid rgba(100,180,255,0.2);border-radius:24px;padding:52px 56px;width:480px;box-shadow:0 0 80px rgba(99,102,241,0.2),0 25px 50px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.1),inset 0 -1px 0 rgba(99,102,241,0.1)}
+.b::before{content:"";position:absolute;top:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,rgba(99,179,255,0.6),transparent)}
+.b::after{content:"";position:absolute;bottom:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,rgba(99,179,255,0.3),transparent)}
+.corner{position:absolute;width:20px;height:20px;border:2px solid rgba(99,179,255,0.4)}
+.corner-tl{top:12px;left:12px;border-right:none;border-bottom:none;border-radius:8px 0 0 0}
+.corner-tr{top:12px;right:12px;border-left:none;border-bottom:none;border-radius:0 8px 0 0}
+.corner-bl{bottom:12px;left:12px;border-right:none;border-top:none;border-radius:0 0 0 8px}
+.corner-br{bottom:12px;right:12px;border-left:none;border-top:none;border-radius:0 0 8px 0}
+.logo{text-align:center;margin-bottom:14px}
+.ring{width:70px;height:70px;margin:0 auto;position:relative;border-radius:50%;background:conic-gradient(from 0deg,#6366f1,#63b3ff,#a78bfa,#6366f1);animation:spin 4s linear infinite;box-shadow:0 0 25px rgba(99,102,241,0.5),0 0 50px rgba(99,102,241,0.2)}
+.ring-inner{position:absolute;top:5px;left:5px;right:5px;bottom:5px;background:linear-gradient(135deg,#0f1428,#1a1f3d);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.icon{display:flex;align-items:center;justify-content:center;animation:pulse 2s ease-in-out infinite;filter:drop-shadow(0 0 8px rgba(99,179,255,0.6))}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+h1{font-size:2.4rem;background:linear-gradient(135deg,#63b3ff,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:8px}
+.subtitle{text-align:center;color:rgba(220,235,255,0.6);margin-bottom:16px;font-size:1rem}
+.divider{display:flex;align-items:center;justify-content:center;margin:18px 0}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(100,180,255,0.3),transparent)}
+.divider span{color:rgba(220,235,255,0.4);margin:0 15px;font-size:0.9rem}
+.g{margin-bottom:24px;position:relative}
+.g l{display:block;color:rgba(220,235,255,0.85);margin-bottom:10px;font-size:1rem;font-weight:500}
+.g::before{content:"";position:absolute;left:0;top:0;bottom:0;width:50px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.1));border-radius:14px 0 0 14px}
+.i{width:100%;padding:16px 18px 16px 54px;background:rgba(255,255,255,0.05);border:1px solid rgba(100,180,255,0.25);border-radius:14px;color:#fff;font-size:1.05rem;transition:all 0.3s;position:relative}
+.i:focus{outline:none;border-color:#63b3ff;box-shadow:0 0 25px rgba(99,179,255,0.25)}
+.bt{width:100%;padding:18px;background:linear-gradient(135deg,#6366f1,#63b3ff);border:none;border-radius:14px;color:#fff;font-size:1.15rem;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,0.3),inset 0 1px 0 rgba(255,255,255,0.2);transition:all 0.3s;position:relative;overflow:hidden}
+.bt::before{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:left 0.5s}
+.bt:hover{transform:translateY(-3px);box-shadow:0 8px 40px rgba(99,102,241,0.5)}
+.bt:hover::before{left:100%}
+.bt:disabled{opacity:0.7;cursor:not-allowed;transform:none}
+.r{text-align:center;margin-top:28px;color:rgba(220,235,255,0.5);font-size:0.95rem}
+.r a{color:#63b3ff;font-weight:500;text-decoration:none;transition:color 0.3s}
+.r a:hover{color:#8b5cf6;text-decoration:underline}
+.e{color:#ff6b6b;text-align:center;margin-top:16px;display:none;font-size:0.95rem;animation:shake 0.5s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.f{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#4ade80;padding:12px 20px;border-radius:20px;margin-top:22px;font-size:0.95rem}
+.f::before{content:"🎁";font-size:1.1rem}
+</style>
+</head>
+<body>
+<canvas id="aurora"></canvas>
+<div class="c">
+<div class="b">
+<span class="corner corner-tl"></span>
+<span class="corner corner-tr"></span>
+<span class="corner corner-bl"></span>
+<span class="corner corner-br"></span>
+<div class="logo">
+<div class="ring">
+<div class="ring-inner">
+<div class="icon">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<defs>
+<linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" style="stop-color:#63b3ff"/>
+<stop offset="100%" style="stop-color:#a78bfa"/>
+</linearGradient>
+</defs>
+<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+</svg>
+</div>
+</div>
+</div>
+</div>
+<h1>AI智能面试系统</h1>
+<p class="subtitle">登录您的账号</p>
+<div class="divider"><span>✨</span></div>
+<span class="f">新用户免费体验3次面试</span>
+<form id="f" style="margin-top:30px">
+<div class="g"><l>用户名</l><input type="text" class="i" id="u" placeholder="请输入用户名" required></div>
+<div class="g"><l>密码</l><input type="password" class="i" id="p" placeholder="请输入密码" required></div>
+<button type="submit" class="bt" id="s">登 录</button>
+<p class="e" id="m"></p>
+</form>
+<p class="r">还没有账号？<a href="/register.html">立即注册</a></p>
+</div>
+</div>
+<script>
+var canvas=document.getElementById("aurora");
+var ctx=canvas.getContext("2d");
+var W,H,time=0;
+var PI2=Math.PI*2;
+var stars=[],particles=[],ripples=[];
+var meteors=[];
+var mouse={x:0,y:0,cx:0,cy:0};
+var lastMouse={x:0,y:0};
+var auroraBands=[
+  {x:0.15,hue1:120,hue2:280,op:0.3,speed:0.0003,phase:0},
+  {x:0.3,hue1:140,hue2:300,op:0.25,speed:0.00035,phase:1},
+  {x:0.5,hue1:160,hue2:260,op:0.28,speed:0.00028,phase:2},
+  {x:0.7,hue1:180,hue2:320,op:0.22,speed:0.0004,phase:3},
+  {x:0.85,hue1:100,hue2:340,op:0.26,speed:0.00032,phase:4}
+];
+
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;initAll()}
+function initAll(){
+  stars=[];for(var i=0;i<200;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+0.3,phase:Math.random()*PI2});
+  particles=[];var cs=["#00ffcc","#63b3ff","#a78bfa","#22d3ee"];for(var i=0;i<100;i++)particles.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.3-0.2,size:Math.random()*2+1,color:cs[i%4],op:Math.random()*0.5+0.3});
+}
+function h2r(h){var b=parseInt(h.slice(1),16);return(b>>16)+","+((b>>8)&255)+","+(b&255)}
+function drawBg(){ctx.fillStyle="#070b27";ctx.fillRect(0,0,W,H)}
+function drawStars(){for(var i=0;i<stars.length;i++){var s=stars[i];var t=0.4+0.5*Math.abs(Math.sin(time*0.0006+s.phase));ctx.globalAlpha=t*0.9;ctx.fillStyle="rgba(200,220,255,1)";ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,PI2);ctx.fill()}ctx.globalAlpha=1}
+function drawAurora(){
+  var now=time*0.001;
+  ctx.save();
+  ctx.globalCompositeOperation="screen";
+  for(var i=0;i<auroraBands.length;i++){
+    var band=auroraBands[i];
+    var cx=band.x*W+Math.sin(now*band.speed*500+band.phase)*W*0.03;
+    var op=band.op*(0.7+0.3*Math.sin(now*band.speed*300+band.phase));
+    var g=ctx.createRadialGradient(cx,H*0.6,0,cx,H*0.6,W*0.4);
+    g.addColorStop(0,"hsla("+band.hue1+",80%,60%,"+op+")");
+    g.addColorStop(0.5,"hsla("+band.hue2+",70%,50%,"+(op*0.6)+")");
+    g.addColorStop(1,"transparent");
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.moveTo(0,H);
+    ctx.lineTo(0,H*0.4);
+    for(var x=0;x<=W;x+=3){
+      var baseY=H*0.5;
+      var wave=Math.sin(x*0.004+now*band.speed*1000+band.phase)*H*0.15;
+      wave+=Math.sin(x*0.002+now*band.speed*600+band.phase*2)*H*0.1;
+      wave+=Math.sin(x*0.006+now*band.speed*400+band.phase*3)*H*0.05;
+      ctx.lineTo(x,baseY+wave);
+    }
+    ctx.lineTo(W,H);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+function drawParticles(){ctx.save();ctx.globalCompositeOperation="screen";for(var i=0;i<particles.length;i++){var p=particles[i];ctx.globalAlpha=p.op;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,PI2);ctx.fill();p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W||p.y<0||p.y>H){p.x=Math.random()*W;p.y=Math.random()*H}}ctx.globalAlpha=1;ctx.restore()}
+function drawMouseHalo(){mouse.cx+=(mouse.x-mouse.cx)*0.1;mouse.cy+=(mouse.y-mouse.cy)*0.1;var g=ctx.createRadialGradient(mouse.cx,mouse.cy,0,mouse.cx,mouse.cy,150);g.addColorStop(0,"rgba(99,102,241,0.25)");g.addColorStop(0.5,"rgba(99,102,241,0.1)");g.addColorStop(1,"transparent");ctx.fillStyle=g;ctx.fillRect(mouse.cx-150,mouse.cy-150,300,300)}
+function drawMeteors(){var now=Date.now();meteors=meteors.filter(function(m){return now-m.t<800});ctx.save();ctx.globalCompositeOperation="screen";for(var i=0;i<meteors.length;i++){var m=meteors[i];var age=(now-m.t)/800;var alpha=(1-age)*0.9;var len=m.speed*(1-age)*30;var angle=Math.atan2(m.vy,m.vx);ctx.beginPath();var grad=ctx.createLinearGradient(m.x,m.y,m.x-Math.cos(angle)*len,m.y-Math.sin(angle)*len);grad.addColorStop(0,"rgba(0,255,204,"+alpha+")");grad.addColorStop(0.3,"rgba(99,102,241,"+(alpha*0.7)+")");grad.addColorStop(1,"transparent");ctx.strokeStyle=grad;ctx.lineWidth=3*(1-age*0.5);ctx.lineCap="round";ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(m.x-Math.cos(angle)*len,m.y-Math.sin(angle)*len);ctx.stroke();m.x+=m.vx;m.y+=m.vy;m.t+=16}ctx.restore()}
+function drawCursor(){ctx.save();ctx.shadowColor="#00ffcc";ctx.shadowBlur=20;ctx.beginPath();ctx.arc(mouse.x,mouse.y,12,0,PI2);ctx.strokeStyle="rgba(0,255,204,0.9)";ctx.lineWidth=3;ctx.stroke();ctx.beginPath();ctx.arc(mouse.x,mouse.y,5,0,PI2);ctx.fillStyle="#00ffcc";ctx.fill();ctx.restore()}
+function drawRipples(){var now=Date.now();for(var i=ripples.length-1;i>=0;i--){var r=ripples[i];var age=(now-r.t)/800;if(age>1){ripples.splice(i,1);continue}var radius=300*age;var alpha=(1-age)*0.5;ctx.beginPath();ctx.arc(r.x,r.y,radius,0,PI2);ctx.strokeStyle="rgba(99,102,241,"+alpha+")";ctx.lineWidth=2;ctx.stroke()}}
+function drawVignette(){var g=ctx.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.85);g.addColorStop(0,"transparent");g.addColorStop(1,"rgba(4,7,26,0.7)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}
+function animate(){time+=16;ctx.fillStyle="rgba(7,11,27,0.12)";ctx.fillRect(0,0,W,H);drawBg();drawStars();drawAurora();drawParticles();drawMouseHalo();drawMeteors();drawCursor();drawRipples();drawVignette();requestAnimationFrame(animate)}
+window.addEventListener("mousemove",function(e){var dx=e.clientX-lastMouse.x;var dy=e.clientY-lastMouse.y;var speed=Math.sqrt(dx*dx+dy*dy);if(speed>3){meteors.push({x:e.clientX,y:e.clientY,vx:dx*0.3,vy:dy*0.3,speed:speed,t:Date.now()});}lastMouse.x=e.clientX;lastMouse.y=e.clientY;mouse.x=e.clientX;mouse.y=e.clientY});
+canvas.addEventListener("click",function(e){ripples.push({x:e.clientX,y:e.clientY,t:Date.now()})});
+resize();animate();
+document.getElementById("f").addEventListener("submit",async function(e){e.preventDefault();var u=document.getElementById("u").value,p=document.getElementById("p").value,s=document.getElementById("s"),m=document.getElementById("m");s.disabled=true;s.textContent="登录中...";m.style.display="none";try{var r=await fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})});var d=await r.json();if(d.status==="success"){localStorage.setItem("token",d.token);localStorage.setItem("user",JSON.stringify(d.user));location.href="/admin.html"}else{m.textContent=d.error||"登录失败";m.style.display="block";s.disabled=false;s.textContent="登 录"}}catch(err){m.textContent="网络错误";m.style.display="block";s.disabled=false;s.textContent="登 录"}});
+</script>
+</body>
+</html>

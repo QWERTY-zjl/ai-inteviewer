@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI智能面试系统</title>
+  <link href="css/style.css" rel="stylesheet">
+  <script src="js/vue.global.prod.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script src="js/chart.umd.js"></script>
+  <script src="js/sweetalert2.js"></script>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="grid"></div>
+  
+  <div id="app">
+    <nav class="nav">
+      <div class="nav-brand">
+        <span class="logo">🤖</span>
+        <span class="brand-text">AI智能面试</span>
+      </div>
+      <div class="nav-info" v-if="interviewToken">
+        <span class="status-badge" :class="statusClass">{{ statusText }}</span>
+        <span class="timer" v-if="isInterviewActive">{{ formatTime(elapsedTime) }}</span>
+      </div>
+    </nav>
+
+    <main class="main" v-if="!showReport">
+      <div class="container">
+        <div class="grid-2">
+          <div class="card camera-section">
+            <div class="card-header">
+              <h2>📹 面试实况</h2>
+              <div class="camera-controls">
+                <button class="btn-icon" @click="toggleCamera" :class="{active: cameraOn}">
+                  {{ cameraOn ? '⏹' : '▶' }}
+                </button>
+              </div>
+            </div>
+            <div class="camera-container" :class="{recording: isRecording}">
+              <video ref="videoEl" autoplay muted playsinline></video>
+              <canvas ref="canvasEl" style="display:none"></canvas>
+              <div class="camera-overlay" v-if="!cameraOn">
+                <span class="icon">🎥</span>
+                <span>点击开启摄像头</span>
+              </div>
+              <div class="expression-display" v-if="currentExpression">
+                <span class="expression-badge" :class="'exp-'+currentExpression.type">
+                  {{ currentExpression.emoji }} {{ currentExpression.label }}
+                </span>
+              </div>
+              <div class="recording-indicator" v-if="isRecording">
+                <span class="rec-dot"></span> 录制中
+              </div>
+            </div>
+          </div>
+
+          <div class="card question-section">
+            <div class="card-header">
+              <h2>📝 面试题目</h2>
+              <span class="question-counter">{{ currentIndex + 1 }} / {{ questions.length }}</span>
+            </div>
+            
+            <div class="question-content" v-if="currentQuestion">
+              <div class="question-type-tag" :class="'type-'+currentQuestion.type">
+                {{ questionTypeLabel }}
+              </div>
+              <p class="question-text">{{ currentQuestion.text }}</p>
+            </div>
+
+            <div class="answer-section">
+              <div class="answer-mode-tabs">
+                <button class="tab" :class="{active: answerMode==='text'}" @click="answerMode='text'">💬 文字</button>
+                <button class="tab" :class="{active: answerMode==='voice'}" @click="answerMode='voice'">🎤 语音</button>
+              </div>
+              <div v-if="answerMode==='text'" class="text-answer">
+                <textarea v-model="answerText" placeholder="请输入你的回答..." rows="5"></textarea>
+              </div>
+              <div v-else class="voice-answer">
+                <div class="voice-visual" :class="{recording: isRecording}">
+                  <div class="wave" v-for="i in 5" :key="i"></div>
+                </div>
+                <p class="voice-hint" v-if="!isRecording">点击按钮开始录音</p>
+                <p class="voice-hint" v-else>正在聆听... {{ formatTime(recordingTime) }}</p>
+                <p class="recognized-text" v-if="recognizedText">{{ recognizedText }}</p>
+              </div>
+              <div class="answer-actions">
+                <button class="btn-record" @click="toggleRecording" v-if="answerMode==='voice'" :class="{recording: isRecording}">
+                  {{ isRecording ? '⏹ 停止' : '🎤 开始录音' }}
+                </button>
+                <button class="btn-submit" @click="submitAnswer" :disabled="isSubmitting || !canSubmit">
+                  {{ isSubmitting ? '提交中...' : '➡ 提交答案' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" :style="{width: progressPercent + '%'}"></div>
+        </div>
+      </div>
+    </main>
+
+    <main class="main report-page" v-else>
+      <div class="container">
+        <div class="report-header">
+          <h1>📊 面试评估报告</h1>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h2>🎯 能力雷达图</h2></div>
+            <div class="chart-container">
+              <canvas ref="radarChart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>⭐ 综合评价</h2></div>
+            <div class="overall-score" :class="scoreClass">
+              <span class="score-value">{{ overallScore }}</span>
+              <span class="score-label">分</span>
+            </div>
+            <p class="recommendation">{{ evaluation.recommendation }}</p>
+          </div>
+        </div>
+        <div class="card scores-detail">
+          <div class="card-header"><h2>📋 详细评分</h2></div>
+          <div class="scores-list">
+            <div class="score-item" v-for="item in evaluation.detailedScores" :key="item.name">
+              <div class="score-name">{{ item.name }}</div>
+              <div class="score-bar"><div class="score-fill" :style="{width: item.percentage + '%'}"></div></div>
+              <div class="score-value">{{ item.percentage }}分</div>
+            </div>
+          </div>
+        </div>
+        <div class="report-actions">
+          <button class="btn-primary" @click="restartInterview">🔄 重新面试</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, nextTick } = Vue;
+    createApp({
+      setup() {
+        const interviewToken = ref('');
+        const questions = ref([]);
+        const currentIndex = ref(0);
+        const answerText = ref('');
+        const answerMode = ref('text');
+        const isRecording = ref(false);
+        const isSubmitting = ref(false);
+        const showReport = ref(false);
+        const elapsedTime = ref(0);
+        const recordingTime = ref(0);
+        const recognizedText = ref('');
+        const cameraOn = ref(false);
+        const currentExpression = ref(null);
+        const videoEl = ref(null);
+        const canvasEl = ref(null);
+        const radarChart = ref(null);
+        const overallScore = ref(0);
+        const evaluation = ref({});
+        let mediaStream = null;
+        let expressionInterval = null;
+
+        const currentQuestion = computed(() => questions.value[currentIndex.value] || null);
+        const questionTypeLabel = computed(() => {
+          const types = { technical: '技术题', behavioral: '行为题', situational: '情景题' };
+          return types[currentQuestion.value?.type] || '面试题';
+        });
+        const canSubmit = computed(() => answerText.value.trim().length > 0 || recognizedText.value);
+        const progressPercent = computed(() => Math.round((currentIndex.value / questions.value.length) * 100));
+        const answeredCount = computed(() => currentIndex.value);
+        const scoreClass = computed(() => overallScore.value >= 80 ? 'score-high' : overallScore.value >= 60 ? 'score-mid' : 'score-low');
+
+        const toggleCamera = async () => {
+          if (cameraOn.value) {
+            if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+            cameraOn.value = false;
+          } else {
+            try {
+              mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+              videoEl.value.srcObject = mediaStream;
+              cameraOn.value = true;
+              startExpressionAnalysis();
+            } catch (e) { alert('无法访问摄像头'); }
+          }
+        };
+
+        const startExpressionAnalysis = () => {
+          if (expressionInterval) clearInterval(expressionInterval);
+          expressionInterval
