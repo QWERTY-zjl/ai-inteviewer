@@ -210,6 +210,12 @@ async def root():
     """根路径"""
     return {"message": "智能招聘面试模拟系统 API", "version": "1.0.0"}
 
+# ==================== 健康检查 ====================
+@app.get("/api/health")
+async def health_check():
+    """健康检查端点（供Docker HEALTHCHECK使用）"""
+    return {"status": "healthy", "service": "interview-system"}
+
 # ==================== 岗位管理API ====================
 app.get("/api/positions")(get_positions)
 app.post("/api/positions")(create_position)

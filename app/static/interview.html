@@ -1755,7 +1755,8 @@ body{
                     </div>
                     <button v-if="!cameraActive" 
                             class="control-btn primary w-100" 
-                            @click="startCamera">
+                            @click="startCamera"
+                            onclick="console.log('直接onclick测试')">
                         <i class="bi bi-camera-video me-2"></i>启用表情捕捉
                     </button>
                     <div v-else class="text-center">
@@ -3161,6 +3162,7 @@ body{
                     final_score: null,
                     suggestions: []
                 });
+                const cameraVideo = ref(null);
                 const cameraStream = ref(null);
                 const expressionInterval = ref(null);
                 const expressionVideo = ref(null);
@@ -3240,6 +3242,7 @@ body{
 
                 // 启动摄像头
                 const startCamera = async () => {
+                    console.log('startCamera 被调用!');
                     try {
                         // 检查浏览器是否支持 getUserMedia
                         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -3253,15 +3256,18 @@ body{
                         
                         // 使用 cameraVideo ref 来绑定视频流
                         const videoElement = cameraVideo.value;
+                        console.log('videoElement:', videoElement);
+                        console.log('cameraStream:', cameraStream.value);
                         if (videoElement && cameraStream.value) {
                             videoElement.srcObject = cameraStream.value;
                             cameraActive.value = true;
+                            console.log('摄像头已启动!');
                             // 表情分析暂不启用
                             // startExpressionCapture();
                         }
                     } catch (err) {
                         console.error('摄像头启动失败:', err);
-                        error.value = '无法访问摄像头，请确保您已授予摄像头权限';
+                        alert('无法访问摄像头，请确保您已授予摄像头权限。错误: ' + err.message);
                     }
                 };
 
