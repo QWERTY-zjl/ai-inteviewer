@@ -55,6 +55,7 @@ from flask_cors import CORS
 from app.config.config import DASHSCOPE_API_KEY
 from app.db.db import init_db, get_db, return_db, close_all_connections
 from app.api.position_api import get_positions, create_position, update_position, delete_position
+from app.wrong_routes import register_wrong_routes
 
 
 from app.utils.utils import generate_token
@@ -94,6 +95,9 @@ app.route('/api/positions', methods=['GET'])(get_positions)
 app.route('/api/positions', methods=['POST'])(create_position)
 app.route('/api/positions/<int:id>', methods=['PUT'])(update_position)
 app.route('/api/positions/<int:id>', methods=['DELETE'])(delete_position)
+
+# ==================== 错题本API ====================
+register_wrong_routes(app, get_db, return_db, logger)
 
 # ==================== 个人用户版API ====================
 # 个人用户版面试API已在下方定义
