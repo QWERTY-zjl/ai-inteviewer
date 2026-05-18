@@ -1275,6 +1275,7 @@ body{
 
 /* ── Aurora canvas ── */
 #aurora{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.aurora-hr{height:1px;background:linear-gradient(90deg,#00E5FF,#0099FF 40%,#7B2FFD 70%,transparent);opacity:.38;margin:14px 0 20px}
 
 /* ── Glass ── */
 .glass{
@@ -1481,29 +1482,118 @@ body{
     <!-- Aurora Animation Script -->
     <script>
     (function() {
-        const canvas = document.getElementById('aurora');
-        const ctx = canvas.getContext('2d');
-        let width, height;
-        let time = 0;
-        
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+        var c=document.getElementById("aurora"),W,H,ctx,time=0,mouse={x:0,y:0,cx:0,cy:0},auroraBands,particles,meteors=[],ripples=[],PI2=Math.PI*2;
+        function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+        resize();window.addEventListener("resize",resize);
+        mouse.x=W/2;mouse.y=H/2;mouse.cx=W/2;mouse.cy=H/2;
+        function initAurora(){
+            ctx=c.getContext("2d");
+            auroraBands=[
+                {x:0.15,hue1:180,hue2:200,speed:0.8,op:0.15,phase:0},
+                {x:0.35,hue1:240,hue2:260,speed:0.6,op:0.12,phase:2},
+                {x:0.55,hue1:280,hue2:300,speed:0.7,op:0.18,phase:4},
+                {x:0.75,hue1:200,hue2:220,speed:0.5,op:0.14,phase:6},
+                {x:0.9,hue1:260,hue2:280,speed:0.9,op:0.16,phase:8}
+            ];
+            particles=[];
+            for(var i=0;i<50;i++)particles.push({x:Math.random()*W,y:Math.random()*H,size:Math.random()*2+0.5,vx:(Math.random()-0.5)*0.3,vy:Math.random()*0.2+0.1,op:Math.random()*0.5+0.2,color:"hsla("+(180+Math.random()*60)+",80%,80%,"+(Math.random()*0.3+0.1)+")"});
         }
-        resize();
-        window.addEventListener('resize', resize);
-        
-        function noise(x, y, t) {
-            return Math.sin(x * 0.01 + t) * Math.cos(y * 0.01 + t * 0.5) * 0.5 + 0.5;
+        initAurora();
+        function drawAurora(){
+            var now=time*0.001;
+            ctx.save();ctx.globalCompositeOperation="screen";
+            for(var i=0;i<auroraBands.length;i++){
+                var band=auroraBands[i];
+                var cx=band.x*W+Math.sin(now*band.speed*0.5+band.phase)*W*0.03;
+                var op=Math.max(0.01,Math.min(0.3,band.op*(0.7+0.3*Math.sin(now*band.speed*0.3+band.phase))));
+                var g=ctx.createRadialGradient(cx,H*0.6,0,cx,H*0.6,W*0.4);
+                g.addColorStop(0,"hsla("+band.hue1+",80%,60%,"+op.toFixed(3)+")");
+                g.addColorStop(0.5,"hsla("+band.hue2+",70%,50%,"+(op*0.6).toFixed(3)+")");
+                g.addColorStop(1,"transparent");
+                ctx.fillStyle=g;
+                ctx.beginPath();
+                ctx.moveTo(0,H);
+                ctx.lineTo(0,H*0.4);
+                for(var x=0;x<=W;x+=3){
+                    var baseY=H*0.5;
+                    var wave=Math.sin(x*0.004+now*band.speed*1+band.phase)*H*0.15;
+                    wave+=Math.sin(x*0.002+now*band.speed*0.6+band.phase*2)*H*0.1;
+                    wave+=Math.sin(x*0.006+now*band.speed*0.4+band.phase*3)*H*0.05;
+                    ctx.lineTo(x,baseY+wave);
+                }
+                ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+            }
+            ctx.restore();
         }
-        
-        function drawAurora() {
-            ctx.fillStyle = 'rgba(7, 11, 39, 0.1)';
-            ctx.fillRect(0, 0, width, height);
-            
-            for (let i = 0; i < 3; i++) {
-                const gradient = ctx.createLinearGradient(0, 0, width, height);
-                gradient.addColorStop(0, `rgba(0, 229, 255, ${0.02 + Math.sin(time * 0.5 + i) * 0.01})`);
+        function drawParticles(){
+            ctx.save();ctx.globalCompositeOperation="screen";
+            for(var i=0;i<particles.length;i++){
+                var p=particles[i];
+                ctx.globalAlpha=p.op;
+                ctx.fillStyle=p.color;
+                ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,PI2);ctx.fill();
+                p.x+=p.vx;p.y+=p.vy;
+                if(p.x<0||p.x>W||p.y<0||p.y>H){p.x=Math.random()*W;p.y=Math.random()*H;}
+            }
+            ctx.globalAlpha=1;ctx.restore();
+        }
+        function drawMouseHalo(){
+            mouse.cx+=(mouse.x-mouse.cx)*0.1;mouse.cy+=(mouse.y-mouse.cy)*0.1;
+            var g=ctx.createRadialGradient(mouse.cx,mouse.cy,0,mouse.cx,mouse.cy,150);
+            g.addColorStop(0,"rgba(99,102,241,0.25)");g.addColorStop(0.5,"rgba(99,102,241,0.1)");g.addColorStop(1,"transparent");
+            ctx.fillStyle=g;ctx.fillRect(mouse.cx-150,mouse.cy-150,300,300);
+        }
+        function drawMeteors(){
+            var now=Date.now();
+            meteors=meteors.filter(function(m){return now-m.t<800});
+            ctx.save();ctx.globalCompositeOperation="screen";
+            for(var i=0;i<meteors.length;i++){
+                var m=meteors[i];
+                var age=(now-m.t)/800;
+                var alpha=(1-age)*0.9;
+                var len=m.speed*(1-age)*30;
+                var angle=Math.atan2(m.vy,m.vx);
+                ctx.beginPath();
+                var grad=ctx.createLinearGradient(m.x,m.y,m.x-Math.cos(angle)*len,m.y-Math.sin(angle)*len);
+                grad.addColorStop(0,"rgba(0,255,204,"+alpha+")");
+                grad.addColorStop(0.3,"rgba(99,102,241,"+(alpha*0.7)+")");
+                grad.addColorStop(1,"transparent");
+                ctx.strokeStyle=grad;ctx.lineWidth=3*(1-age*0.5);ctx.lineCap="round";
+                ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(m.x-Math.cos(angle)*len,m.y-Math.sin(angle)*len);ctx.stroke();
+                m.x+=m.vx;m.y+=m.vy;m.t+=16;
+            }
+            ctx.restore();
+        }
+        function drawRipples(){
+            var now=Date.now();
+            for(var i=ripples.length-1;i>=0;i--){
+                var r=ripples[i];
+                var age=(now-r.t)/800;
+                if(age>1){ripples.splice(i,1);continue}
+                var radius=300*age;
+                var alpha=(1-age)*0.5;
+                ctx.beginPath();ctx.arc(r.x,r.y,radius,0,PI2);
+                ctx.strokeStyle="rgba(99,102,241,"+alpha+")";ctx.lineWidth=2;ctx.stroke();
+            }
+        }
+        function animate(){
+            time+=16;
+            ctx.fillStyle="rgba(7,11,27,0.12)";
+            ctx.fillRect(0,0,W,H);
+            drawAurora();drawParticles();drawMouseHalo();drawMeteors();drawRipples();
+            requestAnimationFrame(animate);
+        }
+        animate();
+        c.addEventListener("mousemove",function(e){mouse.x=e.clientX;mouse.y=e.clientY});
+        c.addEventListener("click",function(e){
+            ripples.push({x:e.clientX,y:e.clientY,t:Date.now()});
+            if(Math.random()<0.3){
+                var angle=Math.random()*Math.PI*2;
+                meteors.push({x:e.clientX,y:e.clientY,vx:Math.cos(angle)*3,vy:Math.sin(angle)*3,t:Date.now()});
+            }
+        });
+    })();
+    </script> * 0.5 + i) * 0.01})`);
                 gradient.addColorStop(0.5, `rgba(123, 47, 253, ${0.02 + Math.cos(time * 0.3 + i) * 0.01})`);
                 gradient.addColorStop(1, `rgba(0, 153, 255, ${0.02 + Math.sin(time * 0.7 + i) * 0.01})`);
                 
@@ -1865,9 +1955,10 @@ body{
                         <div class="voice-answer-hint">
                             选择识别方式：
                             <select v-model="asrMode" class="asr-mode-select" :disabled="isRecording">
-                                <option value="browser">浏览器语音识别</option>
+                                <option value="browser">✅ 浏览器语音识别（推荐）</option>
                                 <option value="cloud">云端AI识别（阿里云）</option>
                             </select>
+                            <span v-if="asrMode === 'cloud'" style="color: #ff6b6b; font-size: 12px;">⚠️ 云端需要阿里云额度</span>
                         </div>
                         <div class="voice-answer-hint">
                             {{ isRecording ? '录音中...' : '点击下方按钮开始录音，回答完成后点击"作答完毕"提交' }}
@@ -1959,7 +2050,7 @@ body{
                 const isRecording = ref(false);
                 const textAnswer = ref('');
                 const answerMode = ref('voice');
-                const asrMode = ref('cloud'); // 'browser' 或 'cloud'
+                const asrMode = ref('browser'); // 'browser' 或 'cloud'
                 const mediaRecorder = ref(null);
                 const audioChunks = ref([]); // 用于云端ASR的音频数据
                 const loading = ref(false);
@@ -1967,7 +2058,17 @@ body{
                 const error = ref('');
                 const recordingTime = ref(0);
                 const timerInterval = ref(null);
-                const baseURL = '';
+                const baseURL = '/';
+                
+                // 获取当前用户ID
+                const getUserId = () => {
+                    const userStr = localStorage.getItem('currentUser');
+                    if (userStr) {
+                        const user = JSON.parse(userStr);
+                        return user.id;
+                    }
+                    return null;
+                };
                 
                 const interviewStatus = ref(1);
                 const voiceReadingEnabled = ref(true);
@@ -2017,7 +2118,12 @@ body{
                     const url = new URL(window.location.href);
                     return url.searchParams.get('token');
                 };
+                const getRetryIdFromUrl = () => {
+                    const url = new URL(window.location.href);
+                    return url.searchParams.get('retry_id');
+                };
                 const token = ref(getTokenFromUrl());
+                const retryWrongId = ref(getRetryIdFromUrl());
 
                 // 创建新面试
 
@@ -2133,6 +2239,32 @@ body{
                             } catch (err) {
                                 console.error('token无效:', err);
                                 tokenValid = false;
+                            }
+                        }
+                        
+                        // 如果有retryWrongId，先加载错题再创建新面试
+                        if (retryWrongId.value) {
+                            console.log('加载错题信息，ID:', retryWrongId.value);
+                            try {
+                                const resp = await axios.get(`${baseURL}api/wrong/${retryWrongId.value}?user_id=${getUserId()}`);
+                                if (resp.data.status === 'success') {
+                                    const wrongData = resp.data.data;
+                                    currentQuestion.value = {
+                                        id: -1, // 特殊ID表示错题模式
+                                        text: wrongData.question_text,
+                                        correct_answer: wrongData.correct_answer,
+                                        isWrongRetry: true,
+                                        wrongId: retryWrongId.value
+                                    };
+                                    isInterviewStarted.value = true; // 直接开始答题
+                                    loading.value = false;
+                                    console.log('错题加载成功:', currentQuestion.value);
+                                    // 获取音色列表并开始语音播报
+                                    await fetchAvailableVoices();
+                                    return;
+                                }
+                            } catch (e) {
+                                console.error('加载错题失败:', e);
                             }
                         }
                         
@@ -2861,27 +2993,35 @@ body{
                                 
                                 try {
                                     const audioBlob = new Blob(audioChunks.value, { type: 'audio/webm' });
+                                    console.log('[ASR] 音频Blob大小:', audioBlob.size, '类型:', audioBlob.type);
                                     
                                     // 转换为WAV格式
                                     const arrayBuffer = await audioBlob.arrayBuffer();
+                                    console.log('[ASR] ArrayBuffer大小:', arrayBuffer.byteLength);
                                     
                                     // 上传到服务器进行ASR
                                     const formData = new FormData();
                                     formData.append('audio', new File([audioBlob], 'recording.webm', { type: 'audio/webm' }));
                                     
+                                    console.log('[ASR] 发送请求到:', `${baseURL}api/asr/recognize`);
+                                    
                                     const response = await axios.post(`${baseURL}api/asr/recognize`, formData, {
                                         headers: { 'Content-Type': 'multipart/form-data' }
                                     });
+                                    
+                                    console.log('[ASR] 响应:', response.data);
                                     
                                     if (response.data.success && response.data.text) {
                                         textAnswer.value = response.data.text;
                                         console.log('云端ASR识别成功:', response.data.text);
                                         submitTextAnswer();
                                     } else {
+                                        console.error('[ASR] 识别失败:', response.data.error);
                                         error.value = response.data.error || '语音识别失败，请重试';
                                     }
                                 } catch (err) {
-                                    console.error('云端ASR失败:', err);
+                                    console.error('[ASR] 请求失败:', err);
+                                    console.error('[ASR] 错误详情:', err.response?.data);
                                     error.value = '语音识别失败: ' + (err.response?.data?.error || err.message);
                                 } finally {
                                     loading.value = false;
@@ -2958,8 +3098,10 @@ body{
                                 console.log(`结果 ${i}:`, result);
                                 
                                 if (result.isFinal) {
-                                    finalTranscript += result[0].transcript;
-                                    console.log('最终识别结果:', finalTranscript);
+                                    const text = result[0].transcript;
+                                    console.log('单个最终识别结果:', text, '置信度:', result[0].confidence);
+                                    finalTranscript += text;
+                                    console.log('累积最终识别结果:', finalTranscript);
                                     console.log('置信度:', result[0].confidence);
                                 } else {
                                     interimTranscript += result[0].transcript;
@@ -2976,7 +3118,12 @@ body{
                         
                         // 识别结束回调
                         recognition.onend = () => {
+                            console.log('=========================');
                             console.log('语音识别已结束');
+                            console.log('hasSpeech:', hasSpeech);
+                            console.log('finalTranscript:', JSON.stringify(finalTranscript));
+                            console.log('finalTranscript.trim():', JSON.stringify(finalTranscript.trim()));
+                            console.log('finalTranscript.length:', finalTranscript.length);
                             isRecording.value = false;
                             isRecognizing.value = false;
                             stopTimer();
@@ -2984,16 +3131,18 @@ body{
                             
                             const recognitionDuration = Date.now() - recognitionStartTime;
                             console.log(`识别持续时间: ${recognitionDuration}ms`);
-                            console.log(`最终识别结果: "${finalTranscript}"`);
-                            console.log(`是否检测到语音: ${hasSpeech}`);
                             
                             if (finalTranscript.trim()) {
                                 // 直接使用识别结果作为答案
+                                console.log('=== 浏览器识别成功，准备提交 ===');
+                                console.log('识别结果:', finalTranscript);
                                 textAnswer.value = finalTranscript;
-                                console.log('自动提交答案:', finalTranscript);
+                                console.log('textAnswer.value 已赋值:', textAnswer.value);
+                                console.log('开始调用 submitTextAnswer()');
                                 // 自动提交
                                 submitTextAnswer();
                             } else if (hasSpeech) {
+                                console.log('=== hasSpeech=true 但 finalTranscript 为空 ===');
                                 error.value = '语音识别结果为空，请重新录音并确保发音清晰';
                             } else if (recognitionDuration < 2000) {
                                 error.value = '录音时间太短，请说话时间长一些（至少2秒）';
@@ -3101,11 +3250,14 @@ body{
 
                 // 提交手写题答案
                 const submitTextAnswer = async () => {
-                    console.log('提交答案按钮被点击');
-                    console.log('textAnswer.value:', textAnswer.value);
-                    console.log('textAnswer.value.trim():', textAnswer.value.trim());
-                    console.log('currentQuestion.value:', currentQuestion.value);
+                    console.log('===========================================');
+                    console.log('submitTextAnswer 被调用');
+                    console.log('textAnswer.value 当前值:', JSON.stringify(textAnswer.value));
+                    console.log('textAnswer.value 类型:', typeof textAnswer.value);
+                    console.log('textAnswer.value?.length:', textAnswer.value?.length);
                     console.log('answerMode:', answerMode.value);
+                    console.log('currentQuestion.value:', currentQuestion.value);
+                    console.log('===========================================');
                     
                     // 只有在打字作答模式下才检查答案是否为空
                     if (answerMode.value === 'text' && (!textAnswer.value || !textAnswer.value.trim())) {
@@ -3130,9 +3282,52 @@ body{
                         console.log('问题ID:', questionId);
                         
                         // 提交答案
+                        console.log('提交数据:', { 
+                            question_id: questionId, 
+                            answer_text: textAnswer.value,
+                            answer_text_length: textAnswer.value?.length || 0,
+                            answer_mode: answerMode.value,
+                            asr_mode: asrMode.value,
+                            is_recording: isRecording.value
+                        });
+                        
+                        // 如果是错题重试模式，使用不同的API
+                        if (currentQuestion.value.isWrongRetry) {
+                            console.log('错题重试模式，调用 /api/wrong/submit');
+                            const response = await axios.post(`${baseURL}api/wrong/submit`, {
+                                wrong_id: currentQuestion.value.wrongId,
+                                user_answer: textAnswer.value,
+                                user_id: getUserId()  // 从 localStorage 获取当前用户ID
+                            });
+                            console.log('错题重试结果:', response.data);
+                            
+                            // 显示评分结果
+                            if (response.data.status === 'success') {
+                                const score = response.data.score || 0;
+                                const feedback = response.data.feedback || '';
+                                const msg = score >= 60 ? `🎉 已掌握！（${score}分）` : `💪 继续加油！（${score}分）`;
+                                alert(`答题完成！${msg}${feedback ? '\n\n' + feedback : ''}`);
+                                // 自动回到错题本
+                                window.location.href = '/wrong.html';
+                            }
+                            
+                            // 重置状态
+                            textAnswer.value = '';
+                            answerMode.value = 'voice';
+                            error.value = null;
+                            loading.value = false;
+                            return;
+                        }
+                        
+                        console.log('请求URL:', `${baseURL}api/interview/${token.value}/submit_text_answer`);
+                        
                         const response = await axios.post(`${baseURL}api/interview/${token.value}/submit_text_answer`, {
                             question_id: questionId,
                             answer_text: textAnswer.value
+                        }, {
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
                         });
                         console.log('提交答案成功:', response.data);
                         
@@ -3146,6 +3341,8 @@ body{
                     } catch (err) {
                         console.error('提交答案失败:', err);
                         error.value = '提交答案失败，请刷新页面重试';
+                        // 不要继续执行，不要清空答案
+                        return;
                     } finally {
                         console.log('设置loading.value为false');
                         // 确保loading.value被设置为false
@@ -3242,32 +3439,51 @@ body{
 
                 // 启动摄像头
                 const startCamera = async () => {
-                    console.log('startCamera 被调用!');
+                    console.log('[Camera] startCamera 被调用!');
                     try {
                         // 检查浏览器是否支持 getUserMedia
                         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                             alert('您的浏览器不支持摄像头功能');
                             return;
                         }
-                        cameraStream.value = await navigator.mediaDevices.getUserMedia({
+                        
+                        console.log('[Camera] 正在请求摄像头权限...');
+                        const stream = await navigator.mediaDevices.getUserMedia({
                             video: { width: 320, height: 240, facingMode: 'user' },
                             audio: false
                         });
+                        console.log('[Camera] 摄像头权限已获取!', stream);
                         
-                        // 使用 cameraVideo ref 来绑定视频流
-                        const videoElement = cameraVideo.value;
-                        console.log('videoElement:', videoElement);
-                        console.log('cameraStream:', cameraStream.value);
-                        if (videoElement && cameraStream.value) {
-                            videoElement.srcObject = cameraStream.value;
+                        cameraStream.value = stream;
+                        
+                        // 使用 querySelector 获取 video 元素
+                        const videoElement = document.querySelector('.camera-container video');
+                        console.log('[Camera] videoElement:', videoElement);
+                        
+                        if (videoElement) {
+                            videoElement.srcObject = stream;
+                            console.log('[Camera] 已设置 srcObject');
+                            
+                            // 等待视频加载
+                            await new Promise(resolve => {
+                                videoElement.onloadedmetadata = resolve;
+                                setTimeout(resolve, 2000); // 超时2秒
+                            });
+                            
+                            videoElement.play().then(() => {
+                                console.log('[Camera] 视频正在播放!');
+                            }).catch(err => {
+                                console.error('[Camera] 播放失败:', err);
+                            });
+                            
                             cameraActive.value = true;
-                            console.log('摄像头已启动!');
-                            // 表情分析暂不启用
-                            // startExpressionCapture();
+                            console.log('[Camera] cameraActive = true');
+                        } else {
+                            console.error('[Camera] videoElement 为 null!');
                         }
                     } catch (err) {
-                        console.error('摄像头启动失败:', err);
-                        alert('无法访问摄像头，请确保您已授予摄像头权限。错误: ' + err.message);
+                        console.error('[Camera] 摄像头启动失败:', err);
+                        alert('无法访问摄像头，请确保您已授予摄像头权限。\\n错误: ' + err.message);
                     }
                 };
 

@@ -865,6 +865,7 @@ h1, h2, h3, h4, h5, h6, .card-title, .card-text, label, p, span, li { color: #e2
               <span class="badge bg-success ms-2">{{ currentUser.user_type === 'premium' ? 'VIP' : '免费版' }}</span>
             </span>
             <a class="nav-link" href="pricing.html">💎 购买套餐</a>
+            <a class="nav-link" href="wrong.html">📚 错题本</a>
             <a class="nav-link" href="#" @click.prevent="logout">退出</a>
           </template>
           <template v-else>
@@ -1069,6 +1070,13 @@ h1, h2, h3, h4, h5, h6, .card-title, .card-text, label, p, span, li { color: #e2
         };
       },
       mounted() {
+        // 检查登录状态
+        const user = localStorage.getItem('currentUser');
+        if (!user) {
+          location.href = '/login.html';
+          return;
+        }
+        
         // 从URL参数中获取baseURL（如果有）
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('baseURL')) {
@@ -1266,6 +1274,7 @@ h1, h2, h3, h4, h5, h6, .card-title, .card-text, label, p, span, li { color: #e2
             formData.append('resume', this.resumeFile);
             formData.append('work_experience', this.workExperience);
             formData.append('target_position', this.targetPosition);
+            formData.append('user_id', this.currentUser.id);
             
             // 上传简历并分析，设置超时时间为60秒
             const controller = new AbortController();
@@ -1368,6 +1377,7 @@ var PI2=Math.PI*2;
 var stars=[],particles=[];
 var meteors=[];
 var mouse={x:0,y:0,cx:0,cy:0};
+var ripples=[];
 var lastMouse={x:0,y:0};
 var auroraBands=[
   {x:0.15,hue1:120,hue2:280,op:0.3,speed:0.0003,phase:0},

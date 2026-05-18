@@ -206,8 +206,15 @@ def save_questions_to_db(cursor, interview_id, questions, voice_type):
     
     for q in questions:
         try:
-            # 预生成语音
-            audio_data, _ = synthesize_speech(q['question'], voice_type)
+            # 预生成语音（失败时不中断，继续保存问题）
+            try:
+                audio_data, error = synthesize_speech(q['question'], voice_type)
+                if error:
+                    logger.warning(f"[Question] 语音合成失败: {error}，问题将无音频")
+                    audio_data = None
+            except Exception as ts_err:
+                logger.warning(f"[Question] 语音合成异常: {ts_err}，问题将无音频")
+                audio_data = None
             
             # 保存到数据库
             cursor.execute('''

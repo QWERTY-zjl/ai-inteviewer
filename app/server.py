@@ -105,6 +105,12 @@ register_wrong_routes(app, get_db, return_db, logger)
 # 个人用户版面试评价API已在下方定义
 
 
+# ==================== 健康检查 ====================
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """健康检查端点"""
+    return jsonify({"service": "project-interview", "status": "ok"})
+
 # ==================== 个人用户版面试API ====================
 
 @app.route('/api/interview/create', methods=['POST'])
@@ -446,12 +452,18 @@ def submit_text_answer(token):
         
         # 从 JSON 请求体中获取参数
         data = request.get_json()
+        print(f"[DEBUG] 请求数据: {data}")
         question_id = data.get('question_id')
         answer_text = data.get('answer_text')
+        print(f"[DEBUG] question_id={question_id}, answer_text={answer_text[:50] if answer_text else None}...")
         
-        if not question_id or not answer_text:
+        if not question_id:
             return_db(conn)
-            return jsonify({"error": "缺少必要参数"}), 400
+            return jsonify({"error": "缺少question_id", "received": {"question_id": question_id, "answer_text_len": len(answer_text) if answer_text else 0}}), 400
+        
+        # 允许空答案（用户可能没说话）
+        if answer_text is None:
+            answer_text = ''
         
         answered_time = int(time.time())
         
@@ -481,7 +493,36 @@ def submit_text_answer(token):
             if all_answered['total'] == all_answered['answered']:
                 conn.execute('UPDATE interviews SET status = 3 WHERE id = ?', (interview['id'],))
                 conn.commit()
-            
+                
+                # 面试完成 - 自动添加不及格题目到错题本
+                try:
+                    # 获取当前用户的user_id
+                    interview_row = conn.execute('SELECT user_id FROM interviews WHERE id = ?', (interview['id'],)).fetchone()
+                    user_id = interview_row['user_id']
+                    
+                    # 查询所有有回答的题目（回答时间不为空）
+                    answered_questions = conn.execute('''
+                        SELECT iq.id, iq.question, iq.answer_text
+                        FROM interview_questions iq
+                        WHERE iq.interview_id = ? AND iq.answered_at IS NOT NULL
+                    ''', (interview['id'],)).fetchall()
+                    
+                    for q in answered_questions:
+                        # 检查是否已存在
+                        existing = conn.execute('SELECT id FROM wrong_answers WHERE user_id = ? AND question_text = ?', 
+                                               (user_id, q['question'])).fetchone()
+                        if not existing:
+                            # 添加到错题本，等待后续评分后再复习
+                            conn.execute('''
+                                INSERT INTO wrong_answers (user_id, session_id, question_text, user_answer, score, created_at)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            ''', (user_id, token, q['question'], q['answer_text'] or '', 0, int(time.time())))
+                    
+                    conn.commit()
+                    logger.info(f"[错题本] 面试完成，为用户{user_id}添加了{len(answered_questions)}道题目到错题本")
+                except Exception as e:
+                    logger.error(f"[错题本] 添加错题失败: {e}")
+                
             result = {
                 "status": "success",
                 "message": "答案已提交",
@@ -2027,22 +2068,20 @@ def upload_resume():
             traceback.print_exc()
             return jsonify({"status": "error", "message": f"连接数据库失败: {str(e)}", "error_code": "DATABASE_CONNECTION_ERROR"}), 500
         
-        # 插入用户记录（如果不存在）
-        user_id = 1  # 默认为第一个用户
+        # 从请求中获取用户ID（前端传入）
+        user_id = request.form.get('user_id', type=int) or request.json.get('user_id') if request.is_json else None
+        if not user_id:
+            return jsonify({"status": "error", "message": "缺少用户ID", "error_code": "USER_ID_MISSING"}), 400
+        # 验证用户是否存在
         try:
             existing_user = conn.execute('SELECT id FROM users WHERE id = ?', (user_id,)).fetchone()
             if not existing_user:
-                conn.execute('INSERT INTO users (username, email, created_at, last_login_at) VALUES (?, ?, ?, ?)',
-                           ('default_user', 'default@example.com', int(time.time()), int(time.time())))
-                logger.info("[Resume] 创建用户成功")
-            else:
-                logger.info("[Resume] 用户已存在，跳过创建")
+                return_db(conn)
+                return jsonify({"status": "error", "message": "用户不存在", "error_code": "USER_NOT_FOUND"}), 404
         except Exception as e:
-            logger.error(f"[Resume] 错误: 创建用户失败: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"[Resume] 错误: 查询用户失败: {e}")
             return_db(conn)
-            return jsonify({"status": "error", "message": f"创建用户失败: {str(e)}", "error_code": "USER_CREATION_ERROR"}), 500
+            return jsonify({"status": "error", "message": f"查询用户失败: {str(e)}", "error_code": "USER_QUERY_ERROR"}), 500
         
         # 插入面试记录
         try:
@@ -2194,7 +2233,7 @@ def create_personal_interview_and_redirect():
         thread.start()
         
         # 重定向到面试页面
-        return redirect(f"/static/interview.html?token={token}")
+        return redirect(f"/interview.html?token={token}")
     except Exception as e:
         print(f"[Interview] 创建面试失败: {str(e)}")
         return jsonify({"error": str(e)}), 500

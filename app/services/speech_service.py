@@ -40,6 +40,8 @@ def transcribe_audio(audio_data, format="wav"):
         # 将音频转换为 base64 编码
         audio_base64 = base64.b64encode(audio_data).decode('utf-8')
         
+        logger.info(f"[ASR] 音频数据大小: {len(audio_data)} bytes, 格式: {format}")
+        
         # 调用阿里云 ASR API (qwen3-asr-flash)
         response = requests.post(
             "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
@@ -48,7 +50,7 @@ def transcribe_audio(audio_data, format="wav"):
                 "model": "qwen3-asr-flash",
                 "input": {
                     "audio": audio_base64,
-                    "prompt": "请识别这段音频的内容"
+                    "prompt": "请识别这段音频的内容，直接输出识别到的文字，不要做其他任何操作。"
                 },
                 "parameters": {
                     "use_raw_prompt": True
@@ -57,13 +59,27 @@ def transcribe_audio(audio_data, format="wav"):
             timeout=60
         )
         
+        logger.info(f"[ASR] API响应状态: {response.status_code}")
+        
         if response.status_code == 200:
             result = response.json()
-            # qwen3-asr-flash 返回格式：output.audio.text
-            text = result.get("output", {}).get("audio", {}).get("text", "")
-            if text:
-                logger.info(f"[ASR] 识别成功: {text}")
-                return text, None
+            logger.info(f"[ASR] 响应内容: {result}")
+            
+            # qwen3-asr-flash 返回格式：output.choices[0].message.content[0].text
+            try:
+                text = result.get("output", {}).get("choices", [{}])[0].get("message", {}).get("content", [{}])[0].get("text", "")
+            except (IndexError, KeyError):
+                text = None
+            
+            if text and text.strip():
+                # 过滤掉无效的重复响应或错误提示
+                filtered_text = text.strip()
+                if "请提供音频" in filtered_text or "不要做任何" in filtered_text or len(filtered_text) < 5:
+                    logger.warning(f"[ASR] 检测到无效响应: {filtered_text[:50]}...")
+                    return None, "语音识别未返回有效文字 (模型无法识别该音频格式)"
+                    
+                logger.info(f"[ASR] 识别成功: {filtered_text}")
+                return filtered_text, None
             return None, "未识别到文字"
         
         error_msg = response.text[:200] if response.text else "Unknown error"
@@ -71,6 +87,8 @@ def transcribe_audio(audio_data, format="wav"):
         return None, f"语音识别失败: {response.status_code} - {error_msg}"
     except Exception as e:
         logger.error(f"[ASR] 错误: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return None, str(e)
 
 
@@ -95,40 +113,31 @@ def synthesize_speech(text, voice_type="professional_male"):
         
         # 调用阿里云 TTS API (官方文档格式)
         response = requests.post(
-            "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+            "https://dashscope.aliyuncs.com/api/v1/services/aigc/speech/synthesis",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
-                "model": "qwen3-tts-flash",
+                "model": "qwen-tts-flash",
                 "input": {
                     "text": text
                 },
                 "parameters": {
                     "voice": voice,
-                    "language_type": "Chinese"
+                    "response_format": "mp3",
+                    "sample_rate": 16000
                 }
             },
-            timeout=60
+            timeout=30
         )
         
         if response.status_code == 200:
-            result = response.json()
-            # 从响应中获取音频URL
-            audio_url = result.get("output", {}).get("audio", {}).get("url", "")
-            
-            if not audio_url:
-                return None, "未获取到音频URL"
-            
-            # 从URL下载音频
-            audio_response = requests.get(audio_url, timeout=60)
-            if audio_response.status_code == 200:
-                logger.info(f"[TTS] 成功合成音频，大小: {len(audio_response.content)} bytes")
-                return audio_response.content, None
-            else:
-                return None, f"下载音频失败: {audio_response.status_code}"
-        else:
-            error_msg = response.text[:200] if response.text else "Unknown error"
-            logger.error(f"[TTS] API调用失败: {response.status_code} - {error_msg}")
-            return None, f"语音合成失败: {response.status_code} - {error_msg}"
+            logger.info(f"[TTS] 合成成功，音频大小: {len(response.content)} bytes")
+            return response.content, None
+        
+        error_msg = response.text[:200] if response.text else "Unknown error"
+        logger.error(f"[TTS] API调用失败: {response.status_code} - {error_msg}")
+        return None, f"语音合成失败: {response.status_code} - {error_msg}"
     except Exception as e:
         logger.error(f"[TTS] 错误: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return None, str(e)

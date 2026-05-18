@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>错题本 - AI面试系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;font-family:Microsoft YaHei,sans-serif;background:linear-gradient(135deg,#070b27,#0f1629,#1a1f3d)}
+.container{max-width:900px;margin:0 auto;padding:40px 20px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
+.header h1{font-size:2rem;background:linear-gradient(135deg,#63b3ff,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.back-btn{background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.3);color:#63b3ff;padding:10px 20px;border-radius:10px;text-decoration:none;font-size:0.95rem}
+.stats{display:flex;gap:20px;margin-bottom:30px}
+.stat-card{background:rgba(15,20,50,0.8);border:1px solid rgba(100,180,255,0.2);border-radius:16px;padding:24px;flex:1;text-align:center}
+.stat-card h3{color:rgba(220,235,255,0.6);font-size:0.9rem;margin-bottom:8px}
+.stat-card .num{font-size:2.5rem;font-weight:700;color:#63b3ff}
+.wrong-list{display:flex;flex-direction:column;gap:16px}
+.wrong-item{background:rgba(15,20,50,0.85);border:1px solid rgba(100,180,255,0.2);border-radius:20px;padding:28px}
+.wrong-item .q{color:#fff;font-size:1.1rem;font-weight:500;margin-bottom:16px;line-height:1.6}
+.wrong-item .a-box{background:rgba(255,107,107,0.1);border-left:3px solid #ff6b6b;padding:12px 16px;border-radius:0 10px 10px 0;margin-bottom:16px}
+.wrong-item .a-box p{color:rgba(220,235,255,0.5);font-size:0.85rem;margin-bottom:6px}
+.wrong-item .a-box span{color:rgba(255,255,255,0.9)}
+.wrong-item .meta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.wrong-item .score-tag{padding:6px 14px;border-radius:20px;font-size:0.85rem;font-weight:600;color:#fff}
+.wrong-item .time{color:rgba(220,235,255,0.5);font-size:0.85rem}
+.retry-btn{display:inline-block;background:linear-gradient(135deg,#6366f1,#63b3ff);border:none;color:#fff;padding:10px 24px;border-radius:12px;font-size:0.9rem;text-decoration:none}
+.empty,.loading{text-align:center;padding:80px 20px;color:rgba(220,235,255,0.5)}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>我的错题本</h1>
+        <a href="/admin.html" class="back-btn">返回管理页</a>
+    </div>
+    <div id="stats" class="stats" style="display:none">
+        <div class="stat-card"><h3>错题数量</h3><div class="num" id="totalCount">0</div></div>
+        <div class="stat-card"><h3>已掌握</h3><div class="num" id="masteredCount" style="color:#4ade80">0</div></div>
+        <div class="stat-card"><h3>掌握率</h3><div class="num" id="masterRate">0%</div></div>
+    </div>
+    <div id="content"><div class="loading">加载中...</div></div>
+</div>
+<script>
+function getUser(){var u=localStorage.getItem("currentUser");return u?JSON.parse(u):null;}
+function getUserId(){var u=getUser();if(!u){location.href="/login.html";return null;}return u.id;}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function renderList(data){
+    var el=document.getElementById("content");
+    if(!data||data.length===0){
+        el.innerHTML="<div class=empty><p>暂无错题记录</p><p>面试得分低于60分自动加入</p></div>";
+        return;
+    }
+    var html="<div class=wrong-list>";
+    for(var i=0;i<data.length;i++){
+        var item=data[i];
+        var mastered=item.best_score>=60;
+        var scoreBg=mastered?"linear-gradient(135deg,#4ade80,#22c55e)":"linear-gradient(135deg,#ff6b6b,#ff8e53)";
+        html+="<div class=wrong-item>";
+        html+="<div class=q>"+esc(item.question_text)+"</div>";
+        html+="<div class=a-box><p>你的答案</p><span>"+esc(item.user_answer||"未作答")+"</span></div>";
+        html+="<div class=meta>";
+        html+="<span class=score-tag style='background:"+scoreBg+"'>"+(mastered?"已掌握 ":"")+item.score+"分</span>";
+        html+="<span class=time>"+new Date(item.created_at*1000).toLocaleString()+"</span>";
+        html+="<a href='/interview.html?retry_id="+item.id+"' class=retry-btn>重新练习</a>";
+        html+="</div></div>";
+    }
+    html+="</div>";
+    el.innerHTML=html;
+    document.getElementById("stats").style.display="flex";
+    document.getElementById("totalCount").textContent=data.length;
+    var masteredCount=data.filter(function(x){return x.best_score>=60}).length;
+    document.getElementById("masteredCount").textContent=masteredCount;
+    document.getElementById("masterRate").textContent=Math.round(masteredCount/data.length*100)+"%";
+}
+function loadWrong(){
+    var userId=getUserId();if(!userId)return;
+    var xhr=new XMLHttpRequest();
+    xhr.open("GET","/api/wrong/list?user_id="+userId,true);
+    xhr.setRequestHeader("Content-Type","application/json");
+    xhr.onload=function(){
+        if(xhr.status===200){
+            try{var d=JSON.parse(xhr.responseText);renderList(d.data||[]);}
+            catch(e){document.getElementById("content").innerHTML="<div class=empty><p>数据解析错误</p></div>";}
+        }else{document.getElementById("content").innerHTML="<div class=empty><p>加载失败</p></div>";}
+    };
+    xhr.onerror=function(){document.getElementById("content").innerHTML="<div class=empty><p>网络错误</p></div>";};
+    xhr.send();
+}
+loadWrong();
+</script>
+</body>
+</html>
