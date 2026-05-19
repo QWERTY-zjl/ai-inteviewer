@@ -3,153 +3,72 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>错题本 - AI面试系统</title>
+<title>错题本</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{min-height:100vh;font-family:Microsoft YaHei,sans-serif;background:linear-gradient(135deg,#070b27,#0f1629,#1a1f3d);color:#fff}
-#aurora{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
-.container{position:relative;z-index:10;max-width:900px;margin:0 auto;padding:40px 20px}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
-.header h1{font-size:2rem;background:linear-gradient(135deg,#63b3ff,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.back-btn{background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.3);color:#63b3ff;padding:10px 20px;border-radius:10px;text-decoration:none;font-size:0.95rem;transition:all 0.3s}
-.back-btn:hover{background:rgba(99,102,241,0.4)}
-.stats{display:flex;gap:20px;margin-bottom:30px}
-.stat-card{background:rgba(15,20,50,0.8);backdrop-filter:blur(20px);border:1px solid rgba(100,180,255,0.2);border-radius:16px;padding:24px;flex:1;text-align:center}
-.stat-card h3{color:rgba(220,235,255,0.6);font-size:0.9rem;margin-bottom:8px}
-.stat-card .num{font-size:2.5rem;font-weight:700;color:#63b3ff}
-.stat-card .num.green{color:#4ade80}
-.wrong-list{display:flex;flex-direction:column;gap:16px}
-.wrong-item{background:rgba(15,20,50,0.85);backdrop-filter:blur(20px);border:1px solid rgba(100,180,255,0.2);border-radius:20px;padding:28px}
-.wrong-item .q{color:#fff;font-size:1.1rem;font-weight:500;margin-bottom:16px;line-height:1.6}
-.wrong-item .a-box{background:rgba(255,107,107,0.1);border-left:3px solid #ff6b6b;padding:12px 16px;border-radius:0 10px 10px 0;margin-bottom:16px}
-.wrong-item .a-box p{color:rgba(220,235,255,0.5);font-size:0.85rem;margin-bottom:6px}
-.wrong-item .a-box span{color:rgba(255,255,255,0.9)}
-.wrong-item .meta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
-.btns-group{display:flex;gap:10px;flex-wrap:wrap}
-.retry-btn{display:inline-block;background:linear-gradient(135deg,#6366f1,#63b3ff);border:none;color:#fff;padding:10px 24px;border-radius:12px;font-size:0.9rem;text-decoration:none;cursor:pointer}
-.delete-btn{background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.3);color:#ff6b6b;padding:10px 20px;border-radius:12px;font-size:0.9rem;cursor:pointer;transition:all 0.3s}
-.delete-btn:hover{background:rgba(255,107,107,0.4)}
-.empty,.loading{text-align:center;padding:80px 20px;color:rgba(220,235,255,0.5)}
+body{min-height:100vh;font-family:Microsoft YaHei;background:linear-gradient(135deg,#0a0f1e,#141b33);color:#fff;overflow-x:hidden}
+canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
+.wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:40px 20px}
+h1{font-size:2rem;margin-bottom:30px;background:linear-gradient(135deg,#63b3ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.cards{display:flex;gap:20px;margin-bottom:30px}
+.card{flex:1;background:rgba(20,25,50,.8);backdrop-filter:blur(20px);border:1px solid rgba(100,180,255,.15);border-radius:16px;padding:24px;text-align:center}
+.card h3{color:rgba(220,235,255,.5);font-size:.85rem;margin-bottom:8px}
+.card .n{font-size:2.2rem;font-weight:700;color:#63b3ff}
+.card .n.g{color:#4ade80}
+.items{display:flex;flex-direction:column;gap:16px}
+.item{background:rgba(20,25,50,.85);border:1px solid rgba(100,180,255,.15);border-radius:20px;padding:28px}
+.item .q{font-size:1.1rem;margin-bottom:16px;line-height:1.6}
+.item .a{background:rgba(255,107,107,.1);border-left:3px solid #ff6b6b;padding:12px 16px;border-radius:0 10px 10px 0;margin-bottom:12px}
+.item .a p{color:rgba(220,235,255,.5);font-size:.85rem;margin-bottom:4px}
+.item .a span{color:rgba(255,255,255,.9)}
+.meta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.score{padding:6px 14px;border-radius:20px;font-size:.85rem;font-weight:600}
+.msg{text-align:center;padding:80px 20px;color:rgba(220,235,255,.5)}
 </style>
 </head>
 <body>
-<canvas id="aurora"></canvas>
-<div class="container">
-    <div class="header">
-        <h1>我的错题本</h1>
-        <a href="/admin.html" class="back-btn">返回管理页</a>
-    </div>
-    <div id="stats" class="stats" style="display:none">
-        <div class="stat-card"><h3>错题数量</h3><div class="num" id="totalCount">0</div></div>
-        <div class="stat-card"><h3>已掌握</h3><div class="num green" id="masteredCount">0</div></div>
-        <div class="stat-card"><h3>掌握率</h3><div class="num" id="masterRate">0%</div></div>
-    </div>
-    <div id="content"><div class="loading">加载中...</div></div>
+<canvas id="c"></canvas>
+<div class="wrap">
+<h1>我的错题本</h1>
+<div id="s" class="cards" style="display:none">
+<div class="card"><h3>错题数量</h3><div class="n" id="tc">0</div></div>
+<div class="card"><h3>已掌握</h3><div class="n g" id="mc">0</div></div>
+<div class="card"><h3>掌握率</h3><div class="n" id="mr">0%</div></div>
+</div>
+<div id="c2" class="msg">加载中...</div>
 </div>
 <script>
-(function(){
-    var canvas=document.getElementById("aurora"),ctx=canvas.getContext("2d");
-    var w,h,particles=[];
-    function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight;}
-    function init(){
-        particles=[];
-        for(var i=0;i<80;i++){
-            particles.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*2+1,dx:Math.random()*0.5-0.25,dy:Math.random()*0.3+0.1,cx:Math.random()*w,cy:Math.random()*h});
-        }
-    }
-    function drawAurora(){
-        ctx.fillStyle="rgba(7,11,39,0.15)";
-        ctx.fillRect(0,0,w,h);
-        var t=Date.now()*0.001;
-        particles.forEach(function(p){
-            p.cx+=(Math.sin(t+p.y*0.01)*0.5-p.cx*0.01);
-            p.cy+=(Math.cos(t*0.5+p.x*0.01)*0.3-p.cy*0.01);
-            p.x+=p.dx+p.cx*0.01;
-            p.y+=p.dy;
-            if(p.x<0||p.x>w)p.dx*=-1;
-            if(p.y<0||p.y>h)p.dy*=-1;
-            var g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3);
-            g.addColorStop(0,"rgba(99,179,255,0.3)");
-            g.addColorStop(1,"rgba(99,102,241,0)");
-            ctx.fillStyle=g;
-            ctx.beginPath();
-            ctx.arc(p.x,p.y,p.r*3,0,Math.PI*2);
-            ctx.fill();
-        });
-    }
-    function animate(){drawAurora();requestAnimationFrame(animate);}
-    window.addEventListener("resize",resize);
-    resize();init();animate();
-})();
-function getUser(){var u=localStorage.getItem("currentUser");return u?JSON.parse(u):null;}
-function getUserId(){var u=getUser();if(!u){location.href="/login.html";return null;}return u.id;}
-function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function deleteWrong(id){
-    if(!confirm("确定要删除这道错题吗？"))return;
-    var userId=getUserId();if(!userId)return;
-    var xhr=new XMLHttpRequest();
-    xhr.open("DELETE","/api/wrong/"+id,true);
-    xhr.setRequestHeader("Content-Type","application/json");
-    xhr.onload=function(){
-        if(xhr.status===200){
-            var d=JSON.parse(xhr.responseText);
-            if(d.code===0){alert("删除成功");loadWrong();}
-            else{alert(d.msg||"删除失败");}
-        }else{alert("删除失败");}
-    };
-    xhr.onerror=function(){alert("网络错误");};
-    xhr.send(JSON.stringify({user_id:userId}));
-}
-function renderList(data){
-    var el=document.getElementById("content");
-    if(!data||data.length===0){
-        el.innerHTML='<div class="empty"><p>暂无错题记录</p><p>面试得分低于60分自动加入</p></div>';
-        document.getElementById("stats").style.display="none";
-        return;
-    }
-    var html='<div class="wrong-list">';
-    for(var i=0;i<data.length;i++){
-        var w=data[i];
-        var score=w.best_score||w.score||0;
-       var scoreColor=score>=60?"#4ade80":score>=40?"#fbbf24":"#ff6b6b";
-        html+='<div class="wrong-item">';
-        html+='<div class="q">'+esc(w.question_text)+'</div>';
-        html+='<div class="a-box"><p>我的回答</p><span>'+esc(w.user_answer||"无")+'</span></div>';
-        html+='<div class="a-box"><p>正确答案/解析</p><span>'+esc(w.correct_answer||"无")+'</span></div>';
-        html+='<div class="meta">';
-        html+='<span class="score-tag" style="background:'+scoreColor+'">得分: '+score+'</span>';
-        html+='<span class="time">'+new Date(w.created_at).toLocaleString("zh-CN")+'</span>';
-        html+='</div>';
-        html+='<div class="btns-group" style="margin-top:16px">';
-        html+='<a href="/interview.html?retry_id='+w.id+'" class="retry-btn">重新练习</a>';
-        html+='<button class="delete-btn" onclick="deleteWrong('+w.id+')">删除</button>';
-        html+='</div>';
-        html+='</div>';
-    }
+var canvas=document.getElementById("c"),ctx=canvas.getContext("2d"),w,h,p=[];
+function rz(){w=canvas.width=innerWidth;h=canvas.height=innerHeight;}
+function init(){p=[];for(var i=0;i<60;i++)p.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*2+1,dx:Math.random()*.4-.2,dy:Math.random()*.2+.05});}
+function draw(){ctx.fillStyle="rgba(10,15,30,.12)";ctx.fillRect(0,0,w,h);p.forEach(function(o){o.x+=o.dx;o.y+=o.dy;if(o.x<0||o.x>w)o.dx*=-1;if(o.y<0||o.y>h)o.dy*=-1;var g=ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r*4);g.addColorStop(0,"rgba(99,179,255,.25)");g.addColorStop(1,"rgba(99,102,241,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(o.x,o.y,o.r*4,0,Math.PI*2);ctx.fill();});requestAnimationFrame(draw);}
+addEventListener("resize",rz);rz();init();draw();
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+var uid=0;
+function del(id){if(!confirm("确定删除？"))return;fetch("/api/wrong/"+id,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:uid})}).then(r=>r.json()).then(d=>{if(d.code===0||d.status==="success"){alert("删除成功");init2();}else alert(d.msg||"失败")}).catch(function(){alert("网络错误");});}
+function init2(){
+  var u=JSON.parse(localStorage.getItem("currentUser")||"null");
+  if(!u){location.href="/login.html";return;}
+  uid=u.id;
+  document.getElementById("c2").innerHTML="<p class=msg>加载中...</p>";
+  document.getElementById("s").style.display="none";
+  fetch("/api/wrong/list?user_id="+uid).then(r=>r.json()).then(function(d){
+    var arr=d.data||[];
+    if(arr.length===0){document.getElementById("c2").innerHTML="<p class=msg>暂无错题<br><small>面试得分低于60自动加入</small></p>";return;}
+    var html='<div class="items">';
+    arr.forEach(function(w){var s=w.best_score||w.score||0;var c=s>=60?"#4ade80":s>=40?"#fbbf24":"#ff6b6b";
+      html+='<div class="item"><div class="q">'+esc(w.question_text)+'</div><div class="a"><p>我的回答</p><span>'+esc(w.user_answer||"无")+'</span></div><div class="meta"><span class="score" style="background:'+c+'">得分: '+s+'</span><span style="color:rgba(220,235,255,.5)">'+(w.created_at?new Date(w.created_at*1000).toLocaleString("zh-CN"):"")+'</span></div><div style="margin-top:16px"><a href="/interview.html?retry_id='+w.id+'" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#63b3ff);color:#fff;padding:10px 24px;border-radius:12px;text-decoration:none;margin-right:10px">重新练习</a><button onclick="del('+w.id+')" style="background:rgba(255,107,107,.2);border:1px solid rgba(255,107,107,.3);color:#ff6b6b;padding:10px 20px;border-radius:12px;cursor:pointer">删除</button></div></div>';
+    });
     html+='</div>';
-    el.innerHTML=html;
-    document.getElementById("stats").style.display="flex";
-    document.getElementById("totalCount").textContent=data.length;
-    var mastered=data.filter(function(w){return (w.best_score||w.score||0)>=60}).length;
-    document.getElementById("masteredCount").textContent=mastered;
-    document.getElementById("masterRate").textContent=data.length>0?Math.round(mastered/data.length*100)+"%":"0%";
+    document.getElementById("c2").innerHTML=html;
+    document.getElementById("s").style.display="flex";
+    document.getElementById("tc").textContent=arr.length;
+    var m=arr.filter(function(x){return(x.best_score||x.score||0)>=60}).length;
+    document.getElementById("mc").textContent=m;
+    document.getElementById("mr").textContent=arr.length>0?Math.round(m/arr.length*100)+"%":"0%";
+  }).catch(function(){document.getElementById("c2").innerHTML="<p class=msg>加载失败</p>";});
 }
-function loadWrong(){
-    var userId=getUserId();if(!userId)return;
-    document.getElementById("content").innerHTML='<div class="loading">加载中...</div>';
-    var xhr=new XMLHttpRequest();
-    xhr.open("GET","/api/wrong/list?user_id="+userId,true);
-    xhr.onload=function(){
-        if(xhr.status===200){
-            var d=JSON.parse(xhr.responseText);
-            if(d.code===0){renderList(d.data);}
-            else{document.getElementById("content").innerHTML='<div class="empty"><p>加载失败</p></div>';}
-        }
-    };
-    xhr.onerror=function(){document.getElementById("content").innerHTML='<div class="empty"><p>网络错误</p></div>';};
-    xhr.send();
-}
-document.addEventListener("DOMContentLoaded",loadWrong);
+document.addEventListener("DOMContentLoaded",init2);
 </script>
 </body>
 </html>
